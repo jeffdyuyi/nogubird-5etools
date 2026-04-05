@@ -48,12 +48,12 @@ class Board {
         this.panels = {};
         this.exiledPanels = [];
         this.eleScreen = es(`.dm-screen`);
-        this.width = this.getInitialWidth();
-        this.height = this.getInitialHeight();
+        this.width = 3;
+        this.height = 2;
         this.sideMenu = new SideMenu(this);
         this.menu = new AddMenu();
         this.isFullscreen = false;
-        this.isLocked = false;
+        this.isLocked = true; // Lock by default for collage
         this.isAlertOnNav = false;
 
         this.nextId = 1;
@@ -192,6 +192,8 @@ class Board {
             await this.pDoLoadUrlState();
         } else if (await this.pHasSavedState()) {
             await this.pDoLoadState();
+        } else {
+            this.doReset(); // Initialize with collage defaults
         }
         this.doCheckFillSpaces({ isSkipSave: true });
         this.initGlobalHandlers();
@@ -632,9 +634,30 @@ class Board {
         Object.values(this.panels).forEach(p => p.destroy());
         this.panels = {};
 
-        if (isRetainWidthHeight) this.setDimensions(this.getWidth(), this.getHeight());
-        else this.setDimensions(this.getInitialWidth(), this.getInitialHeight());
+        this.width = 3;
+        this.height = 2;
+        this.doAdjustEleScreenCss();
+        this.sideMenu.doUpdateDimensions();
+
+        Board.COLLAGE_LAYOUT.forEach(it => {
+            const panel = new Panel(this, it.x, it.y, it.w, it.h, it.name);
+            panel.allowedCat = it.allowedCat;
+            panel.isFixed = true;
+            this.addPanel(panel);
+        });
+
+        this.doCheckFillSpaces();
+        this.eleScreen.trigger("panelResize");
     }
+
+    static COLLAGE_LAYOUT = [
+        { name: "玩家职业选择", allowedCat: 5, x: 0, y: 0, w: 1, h: 1 },
+        { name: "玩家种族选择", allowedCat: 10, x: 1, y: 0, w: 1, h: 1 },
+        { name: "玩家背景选择", allowedCat: 3, x: 2, y: 0, w: 1, h: 1 },
+        { name: "玩家专长选择", allowedCat: 7, x: 0, y: 1, w: 1, h: 1 },
+        { name: "玩家法术书", allowedCat: 2, x: 1, y: 1, w: 1, h: 1 },
+        { name: "玩家装备选择", allowedCat: 4, x: 2, y: 1, w: 1, h: 1 },
+    ];
 
     setHoveringButton(panel) {
         this.resetHoveringButton(panel);
@@ -813,7 +836,7 @@ class SideMenu {
         const btnFullscreen = ee`<button class="ve-btn ve-btn-primary">切换全屏</button>`.appendTo(wrpFullscreen);
         this.board.btnFullscreen = btnFullscreen;
         btnFullscreen.onn("click", () => this.board.doToggleFullscreen());
-        const btnLockPanels = ee`<button class="ve-btn ve-btn-danger" title="Lock Panels"><span class="glyphicon glyphicon-lock"></span></button>`.appendTo(wrpFullscreen);
+        const btnLockPanels = ee`<button class="ve-btn ${this.board.isLocked ? "ve-btn-success" : "ve-btn-danger"}" title="Lock Panels"><span class="glyphicon glyphicon-lock"></span></button>`.appendTo(wrpFullscreen);
         this.board.btnLockPanels = btnLockPanels;
         btnLockPanels.onn("click", () => {
             this.board.isLocked = !this.board.isLocked;
@@ -827,6 +850,7 @@ class SideMenu {
             }
             this.board.doSaveStateDebounced();
         });
+        if (this.board.isLocked) e_(document.body).addClass(`dm-screen-locked`);
         renderDivider();
 
         const wrpSaveLoad = ee`<div class="ve-w-100"></div>`.appendTo(this.eleMnu);
@@ -859,7 +883,7 @@ class SideMenu {
         renderDivider();
 
         const wrpReset = ee`<div class="ve-w-100 ve-split-v-center"></div>`.appendTo(this.eleMnu);
-        const btnReset = ee`<button class="ve-btn ve-btn-danger" style="width: 100%;">重置帷幕</button>`.appendTo(wrpReset);
+        const btnReset = ee`<button class="ve-btn ve-btn-danger" style="width: 100%;">重置拼贴板</button>`.appendTo(wrpReset);
         btnReset.onn("click", async () => {
             const comp = BaseComponent.fromObject({ isRetainWidthHeight: true });
             const cbKeepWidthHeight = ComponentUiUtil.getCbBool(comp, "isRetainWidthHeight");
@@ -867,7 +891,7 @@ class SideMenu {
             const eleDescription = ee`<div class="ve-w-320p">
 				<label class="ve-split-v-center ve-mb-2"><span>保留当前宽度/高度</span> ${cbKeepWidthHeight}</label>
 				<hr class="ve-hr-1">
-				<div>确定要重置帷幕吗？</div>
+				<div>确定要重置拼贴板吗？</div>
 			</div>`;
 
             if (!await InputUiUtil["pGetUserBoolean"](/** @type {any} */({ title: "重置", eleDescription, textYes: "是的", textNo: "取消" }))) return;
@@ -932,6 +956,8 @@ class Panel {
         this.width = width;
         this.height = height;
         this.title = title;
+        this.allowedCat = null; // Filter for collage
+        this.isFixed = false; // Prevents removal of title if true
         this.isDirty = true;
         this.isContentDirty = false;
         this.isLocked = false; // unused
@@ -959,7 +985,9 @@ class Panel {
         const existing = board.getPanels(saved.x, saved.y, saved.w, saved.h);
         if (saved.t === PANEL_TYP_EMPTY && existing.length) return null; // cull empties
         else if (existing.length) existing.forEach(p => p.destroy()); // prefer more recent panels
-        const panel = new Panel(board, saved.x, saved.y, saved.w, saved.h);
+        const panel = new Panel(board, saved.x, saved.y, saved.w, saved.h, saved.n);
+        panel.allowedCat = saved.ac;
+        panel.isFixed = !!saved.if;
         panel.render();
 
         const pLoadState = async (saved, skipSetTab, ixTab) => {
@@ -1594,8 +1622,8 @@ class Panel {
     }
 
     doRenderTitle() {
-        const displayText = this.title !== TITLE_LOADING
-            && (this.type === PANEL_TYP_STATS || this.type === PANEL_TYP_RULES || this.type === PANEL_TYP_ADVENTURES || this.type === PANEL_TYP_BOOKS) ? this.title : "";
+        const displayText = this.isFixed ? this.title : (this.title !== TITLE_LOADING
+            && (this.type === PANEL_TYP_STATS || this.type === PANEL_TYP_RULES || this.type === PANEL_TYP_ADVENTURES || this.type === PANEL_TYP_BOOKS) ? this.title : "");
 
         this._doUpdatePanelTitleDisplay(displayText);
         if (!displayText) this.pnlTitle.addClass("hidden");
@@ -2056,6 +2084,9 @@ class Panel {
             y: this.y,
             w: this.width,
             h: this.height,
+            n: this.title,
+            ac: this.allowedCat,
+            if: this.isFixed,
             t: this.type,
         };
 
@@ -2257,6 +2288,17 @@ class AddMenu {
     }
 
     doOpen() {
+        const allowedCat = this.pnl.allowedCat;
+        this.tabs.forEach(t => {
+            const isContent = t.label === "内容";
+            t.eleHead.toggleClass("hidden", allowedCat != null && !isContent);
+        });
+
+        if (allowedCat != null) {
+            const contentTab = this.tabs.find(it => it.label === "内容");
+            if (contentTab) this.pSetActiveTab(contentTab);
+        }
+
         const { eleModalInner, doClose } = UiUtil.getShowModal({
             cbClose: () => {
                 this._eleMenuInner.detach();
@@ -2771,12 +2813,16 @@ class AddMenuSearchTab extends AddMenuTab {
 
             if (this.subType === "content") {
                 results = await OmnisearchBacking.pGetFilteredResults(results, { searchTerm });
-                // Filter out creatures and legendary groups
-                results = results.filter(it => it.doc.c !== 1 && it.doc.c !== 46);
+                // Filter out creatures and legendary groups, and apply panel category restriction
+                const allowedCat = this.menu.pnl.allowedCat;
+                results = results.filter(it => it.doc.c !== 1 && it.doc.c !== 46 && (allowedCat == null || it.doc.c === allowedCat));
             }
 
             const resultCount = results.length ? results.length : index.documentStore.length;
-            const toProcess = results.length ? results : Object.values(index.documentStore.docs).slice(0, UiUtil.SEARCH_RESULTS_CAP).map(it => ({ doc: it }));
+            const allowedCat = this.menu.pnl.allowedCat;
+            const toProcess = results.length ? results : Object.values(index.documentStore.docs)
+                .filter(doc => (this.subType !== "content" || (doc.c !== 1 && doc.c !== 46)) && (this.subType !== "content" || allowedCat == null || doc.c === allowedCat))
+                .slice(0, UiUtil.SEARCH_RESULTS_CAP).map(it => ({ doc: it }));
 
             this.wrpResults.empty();
             this._ptrRows._ = [];
@@ -2853,6 +2899,8 @@ class AddMenuSearchTab extends AddMenuTab {
                 this.cat = selCat.val();
                 await this._pDoSearch();
             });
+
+            if (this.menu.pnl.allowedCat != null) selCat.hideVe();
 
             const iptSearch = ee`<input class="ve-ui-search__ipt-search search ve-form-control" autocomplete="off" placeholder="搜索...">`.appendTo(wrpCtrls);
             const wrpResults = ee`<div class="ve-ui-search__wrp-results"></div>`.appendTo(eleTab);

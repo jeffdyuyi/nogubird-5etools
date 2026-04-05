@@ -1,25 +1,30 @@
+// @ts-nocheck
 "use strict";
 
 class Prx {
-	static addHook (prop, hook) {
+	/** @this {any} */
+	static addHook(prop, hook) {
 		this.px._hooks[prop] = this.px._hooks[prop] || [];
 		this.px._hooks[prop].push(hook);
 		return hook;
 	}
 
-	static addHookAll (hook) {
+	/** @this {any} */
+	static addHookAll(hook) {
 		this.px._hooksAll.push(hook);
 	}
 
-	static toString () {
+	/** @this {any} */
+	static toString() {
 		return JSON.stringify(this, (k, v) => k === "px" ? undefined : v);
 	}
 
-	static copy () {
+	/** @this {any} */
+	static copy() {
 		return JSON.parse(Prx.toString.bind(this)());
 	}
 
-	static get (toProxy) {
+	static get(toProxy) {
 		toProxy.px = {
 			addHook: Prx.addHook.bind(toProxy),
 			addHookAll: Prx.addHookAll.bind(toProxy),
@@ -50,9 +55,9 @@ class Prx {
  * @mixin
  * @param {Class} Cls
  */
-function MixinProxyBase (Cls) {
+function MixinProxyBase(Cls) {
 	class MixedProxyBase extends Cls {
-		constructor (...args) {
+		constructor(...args) {
 			super(...args);
 			this.__hooks = {};
 			this.__hooksAll = {};
@@ -60,7 +65,7 @@ function MixinProxyBase (Cls) {
 			this.__hooksAllTmp = null;
 		}
 
-		_getProxy (hookProp, toProxy) {
+		_getProxy(hookProp, toProxy) {
 			return new Proxy(toProxy, {
 				set: (object, prop, value) => {
 					return this._doProxySet(hookProp, object, prop, value);
@@ -78,7 +83,7 @@ function MixinProxyBase (Cls) {
 
 		_isDisableEqualsSimpleArrayEmpty = false;
 
-		_isEqualSimple (a, b) {
+		_isEqualSimple(a, b) {
 			if (Object.is(a, b)) return true;
 
 			if (!a || !b) return false;
@@ -94,7 +99,7 @@ function MixinProxyBase (Cls) {
 			return false;
 		}
 
-		_doProxySet (hookProp, object, prop, value) {
+		_doProxySet(hookProp, object, prop, value) {
 			if (this._isEqualSimple(object[prop], value)) return true;
 			const prevValue = object[prop];
 			Reflect.set(object, prop, value);
@@ -104,7 +109,7 @@ function MixinProxyBase (Cls) {
 		}
 
 		/** As per `_doProxySet`, but the hooks are run strictly in serial. */
-		async _pDoProxySet (hookProp, object, prop, value) {
+		async _pDoProxySet(hookProp, object, prop, value) {
 			if (this._isEqualSimple(object[prop], value)) return true;
 			const prevValue = object[prop];
 			Reflect.set(object, prop, value);
@@ -113,17 +118,17 @@ function MixinProxyBase (Cls) {
 			return true;
 		}
 
-		_doFireHooks (hookProp, prop, value, prevValue) {
+		_doFireHooks(hookProp, prop, value, prevValue) {
 			if (this.__hooks[hookProp] && this.__hooks[hookProp][prop]) this.__hooks[hookProp][prop].forEach(hook => hook(prop, value, prevValue));
 		}
 
-		_doFireHooksAll (hookProp, prop, value, prevValue) {
+		_doFireHooksAll(hookProp, prop, value, prevValue) {
 			if (this.__hooksAll[hookProp]) this.__hooksAll[hookProp].forEach(hook => hook(prop, undefined, prevValue));
 		}
 
 		// ...Not to be confused with...
 
-		_doFireAllHooks (hookProp) {
+		_doFireAllHooks(hookProp) {
 			if (this.__hooks[hookProp]) Object.entries(this.__hooks[hookProp]).forEach(([prop, hk]) => hk(prop));
 		}
 
@@ -135,67 +140,67 @@ function MixinProxyBase (Cls) {
 		 * @param hook The hook to run. Will be called with two arguments; the property and the value of the property being
 		 *   modified.
 		 */
-		_addHook (hookProp, prop, hook) {
+		_addHook(hookProp, prop, hook) {
 			ProxyBase._addHook_to(this.__hooks, hookProp, prop, hook);
 			if (this.__hooksTmp) ProxyBase._addHook_to(this.__hooksTmp, hookProp, prop, hook);
 			return hook;
 		}
 
-		static _addHook_to (obj, hookProp, prop, hook) {
+		static _addHook_to(obj, hookProp, prop, hook) {
 			((obj[hookProp] = obj[hookProp] || {})[prop] = (obj[hookProp][prop] || [])).push(hook);
 		}
 
-		_addHookAll (hookProp, hook) {
+		_addHookAll(hookProp, hook) {
 			ProxyBase._addHookAll_to(this.__hooksAll, hookProp, hook);
 			if (this.__hooksAllTmp) ProxyBase._addHookAll_to(this.__hooksAllTmp, hookProp, hook);
 			return hook;
 		}
 
-		static _addHookAll_to (obj, hookProp, hook) {
+		static _addHookAll_to(obj, hookProp, hook) {
 			(obj[hookProp] = obj[hookProp] || []).push(hook);
 		}
 
-		_removeHook (hookProp, prop, hook) {
+		_removeHook(hookProp, prop, hook) {
 			ProxyBase._removeHook_from(this.__hooks, hookProp, prop, hook);
 			if (this.__hooksTmp) ProxyBase._removeHook_from(this.__hooksTmp, hookProp, prop, hook);
 		}
 
-		static _removeHook_from (obj, hookProp, prop, hook) {
+		static _removeHook_from(obj, hookProp, prop, hook) {
 			if (obj[hookProp] && obj[hookProp][prop]) {
 				const ix = obj[hookProp][prop].findIndex(hk => hk === hook);
 				if (~ix) obj[hookProp][prop].splice(ix, 1);
 			}
 		}
 
-		_removeHooks (hookProp, prop) {
+		_removeHooks(hookProp, prop) {
 			if (this.__hooks[hookProp]) delete this.__hooks[hookProp][prop];
 			if (this.__hooksTmp && this.__hooksTmp[hookProp]) delete this.__hooksTmp[hookProp][prop];
 		}
 
-		_removeHookAll (hookProp, hook) {
+		_removeHookAll(hookProp, hook) {
 			ProxyBase._removeHookAll_from(this.__hooksAll, hookProp, hook);
 			if (this.__hooksAllTmp) ProxyBase._removeHook_from(this.__hooksAllTmp, hookProp, hook);
 		}
 
-		static _removeHookAll_from (obj, hookProp, hook) {
+		static _removeHookAll_from(obj, hookProp, hook) {
 			if (obj[hookProp]) {
 				const ix = obj[hookProp].findIndex(hk => hk === hook);
 				if (~ix) obj[hookProp].splice(ix, 1);
 			}
 		}
 
-		_resetHooks (hookProp) {
+		_resetHooks(hookProp) {
 			if (hookProp !== undefined) delete this.__hooks[hookProp];
 			else Object.keys(this.__hooks).forEach(prop => delete this.__hooks[prop]);
 		}
 
-		_resetHooksAll (hookProp) {
+		_resetHooksAll(hookProp) {
 			if (hookProp !== undefined) delete this.__hooksAll[hookProp];
 			else Object.keys(this.__hooksAll).forEach(prop => delete this.__hooksAll[prop]);
 		}
 
-		_saveHookCopiesTo (obj) { this.__hooksTmp = obj; }
-		_saveHookAllCopiesTo (obj) { this.__hooksAllTmp = obj; }
+		_saveHookCopiesTo(obj) { this.__hooksTmp = obj; }
+		_saveHookAllCopiesTo(obj) { this.__hooksAllTmp = obj; }
 
 		/**
 		 * Object.assign equivalent, overwrites values on the current proxied object with some new values,
@@ -206,7 +211,7 @@ function MixinProxyBase (Cls) {
 		 * @param toObj
 		 * @param isOverwrite If the overwrite should clean/delete all data from the object beforehand.
 		 */
-		_proxyAssign (hookProp, proxyProp, underProp, toObj, isOverwrite) {
+		_proxyAssign(hookProp, proxyProp, underProp, toObj, isOverwrite) {
 			const oldKeys = Object.keys(this[proxyProp]);
 			const nuKeys = new Set(Object.keys(toObj));
 			const dirtyKeyValues = {};
@@ -236,7 +241,7 @@ function MixinProxyBase (Cls) {
 				});
 		}
 
-		_proxyAssignSimple (hookProp, toObj, isOverwrite) {
+		_proxyAssignSimple(hookProp, toObj, isOverwrite) {
 			return this._proxyAssign(hookProp, `_${hookProp}`, `__${hookProp}`, toObj, isOverwrite);
 		}
 	}
@@ -244,12 +249,12 @@ function MixinProxyBase (Cls) {
 	return MixedProxyBase;
 }
 
-class ProxyBase extends MixinProxyBase(class {}) {}
+class ProxyBase extends MixinProxyBase(class { }) { }
 
 globalThis.ProxyBase = ProxyBase;
 
 class UiUtil {
-	static getBtnClassName (btnType) {
+	static getBtnClassName(btnType) {
 		if (!btnType) return "ve-btn-primary";
 		switch (btnType) {
 			case "default": return "ve-btn-default";
@@ -271,7 +276,7 @@ class UiUtil {
 	 * @param [opts.min] Min allowed return value.
 	 * @param [opts.fallbackOnNaN] Return value if not a number.
 	 */
-	static strToInt (string, fallbackEmpty = 0, opts) { return UiUtil._strToNumber(string, fallbackEmpty, opts, true); }
+	static strToInt(string, fallbackEmpty = 0, opts) { return UiUtil._strToNumber(string, fallbackEmpty, opts, true); }
 
 	/**
 	 * @param string String to parse.
@@ -281,9 +286,9 @@ class UiUtil {
 	 * @param [opts.min] Min allowed return value.
 	 * @param [opts.fallbackOnNaN] Return value if not a number.
 	 */
-	static strToNumber (string, fallbackEmpty = 0, opts) { return UiUtil._strToNumber(string, fallbackEmpty, opts, false); }
+	static strToNumber(string, fallbackEmpty = 0, opts) { return UiUtil._strToNumber(string, fallbackEmpty, opts, false); }
 
-	static _strToNumber (string, fallbackEmpty = 0, opts, isInt) {
+	static _strToNumber(string, fallbackEmpty = 0, opts, isInt) {
 		opts = opts || {};
 		let out;
 		string = string.trim();
@@ -305,7 +310,7 @@ class UiUtil {
 	 * @param [opts] Options Object.
 	 * @param [opts.fallbackOnNaB] Return value if not a boolean.
 	 */
-	static strToBool (string, fallbackEmpty = null, opts) {
+	static strToBool(string, fallbackEmpty = null, opts) {
 		opts = opts || {};
 		if (!string) return fallbackEmpty;
 		string = string.trim().toLowerCase();
@@ -313,9 +318,9 @@ class UiUtil {
 		return string === "true" ? true : string === "false" ? false : opts.fallbackOnNaB;
 	}
 
-	static intToBonus (int, {isPretty = false} = {}) { return `${int >= 0 ? "+" : int < 0 ? (isPretty ? "\u2212" : "-") : ""}${Math.abs(int)}`; }
+	static intToBonus(int, { isPretty = false } = {}) { return `${int >= 0 ? "+" : int < 0 ? (isPretty ? "\u2212" : "-") : ""}${Math.abs(int)}`; }
 
-	static getEntriesAsText (entryArray) {
+	static getEntriesAsText(entryArray) {
 		if (!entryArray || !entryArray.length) return "";
 		if (!(entryArray instanceof Array)) return UiUtil.getEntriesAsText([entryArray]);
 
@@ -326,13 +331,13 @@ class UiUtil {
 				return JSON.stringify(it, null, 2)
 					.split("\n")
 					.map(it => `  ${it}`) // Indent non-string content
-				;
+					;
 			})
 			.flat()
 			.join("\n");
 	}
 
-	static getTextAsEntries (text) {
+	static getTextAsEntries(text) {
 		try {
 			const lines = text
 				.split("\n")
@@ -380,8 +385,8 @@ class UiUtil {
 	 * @param {function} [opts.cbClose] Callback run when the modal is closed.
 	 * @param {jQuery} [opts.$titleSplit] Element to have split alongside the title.
 	 * @param {HTMLElement} [opts.eleTitleSplit] Element to have split alongside the title.
-	 * @param {int} [opts.zIndex] Z-index of the modal.
-	 * @param {number} [opts.overlayColor] Overlay color.
+	 * @param {number} [opts.zIndex] Z-index of the modal.
+	 * @param {string} [opts.overlayColor] Overlay color.
 	 * @param {boolean} [opts.isPermanent] If the modal should be impossible to close.
 	 * @param {boolean} [opts.isIndestructible] If the modal elements should be detached, not removed.
 	 * @param {boolean} [opts.isClosed] If the modal should start off closed.
@@ -390,18 +395,18 @@ class UiUtil {
 	 * @param {boolean} [opts.hasFooter] If the modal has a footer.
 	 * @returns {object}
 	 */
-	static getShowModal (opts) {
+	static getShowModal(opts) {
 		opts = opts || {};
 
 		const doc = (opts.window || window).document;
 
 		/* eslint-disable vet-jquery/jquery */
 		if (opts.$titleSplit && opts.eleTitleSplit) throw new Error(`Only one of "$titleSplit" and "eleTitleSplit" may be specified!`);
-		const eleTitleSplit = opts.eleTitleSplit || (opts.$titleSplit ? e_({ele: opts.$titleSplit?.[0]}) : undefined);
+		const eleTitleSplit = opts.eleTitleSplit || (opts.$titleSplit ? e_({ ele: opts.$titleSplit?.[0] }) : undefined);
 		/* eslint-enable vet-jquery/jquery */
 
-		UiUtil._initModalEscapeHandler({doc});
-		UiUtil._initModalMouseupHandlers({doc});
+		UiUtil._initModalEscapeHandler({ doc });
+		UiUtil._initModalMouseupHandlers({ doc });
 		if (doc.activeElement) doc.activeElement.blur(); // blur any active element as it will be behind the modal
 
 		let resolveModal;
@@ -430,7 +435,7 @@ class UiUtil {
 			doc.body.classList.add(`ve-ui-modal__body-active`);
 		};
 
-		const wrpOverlay = e_({tag: "div", clazz: "ve-ui-modal__overlay"});
+		const wrpOverlay = e_({ tag: "div", clazz: "ve-ui-modal__overlay" });
 		if (opts.zIndex != null) wrpOverlay.style.zIndex = `${opts.zIndex}`;
 		if (opts.overlayColor != null) wrpOverlay.style.backgroundColor = `${opts.overlayColor}`;
 
@@ -552,22 +557,22 @@ class UiUtil {
 	/**
 	 * Async to support external overrides; should be used in common applications.
 	 */
-	static async pGetShowModal (opts) {
+	static async pGetShowModal(opts) {
 		return UiUtil.getShowModal(opts);
 	}
 
-	static _pushToModalStack (modalStackMeta) {
+	static _pushToModalStack(modalStackMeta) {
 		if (!UiUtil._MODAL_STACK.includes(modalStackMeta)) {
 			UiUtil._MODAL_STACK.push(modalStackMeta);
 		}
 	}
 
-	static _popFromModalStack (modalStackMeta) {
+	static _popFromModalStack(modalStackMeta) {
 		const ixStack = UiUtil._MODAL_STACK.indexOf(modalStackMeta);
 		if (~ixStack) UiUtil._MODAL_STACK.splice(ixStack, 1);
 	}
 
-	static _initModalEscapeHandler ({doc}) {
+	static _initModalEscapeHandler({ doc }) {
 		if (UiUtil._MODAL_STACK) return;
 		UiUtil._MODAL_STACK = [];
 
@@ -583,21 +588,21 @@ class UiUtil {
 		});
 	}
 
-	static _initModalMouseupHandlers ({doc}) {
+	static _initModalMouseupHandlers({ doc }) {
 		doc.addEventListener("mousedown", evt => {
 			UiUtil._MODAL_LAST_MOUSEDOWN = evt.target;
 		});
 	}
 
-	static isAnyModalOpen () {
+	static isAnyModalOpen() {
 		return !!UiUtil._MODAL_STACK?.length;
 	}
 
-	static addModalSep (eleModalInner) {
+	static addModalSep(eleModalInner) {
 		eleModalInner.appends(`<hr class="ve-hr-2">`);
 	}
 
-	static getAddModalRow (eleModalInner, tag = "div") {
+	static getAddModalRow(eleModalInner, tag = "div") {
 		return ee`<${tag} class="ve-ui-modal__row"></${tag}>`.appendTo(eleModalInner);
 	}
 
@@ -608,7 +613,7 @@ class UiUtil {
 	 * @param [opts.helpText] Help text (title) of select dropdown.
 	 * @param [opts.eleRhs] Element to attach to the right-hand side of the header.
 	 */
-	static getAddModalRowHeader (eleModalInner, headerText, opts) {
+	static getAddModalRowHeader(eleModalInner, headerText, opts) {
 		opts = opts || {};
 		const row = UiUtil.getAddModalRow(eleModalInner, "h5").addClass("ve-bold");
 		if (opts.eleRhs) ee`<div class="ve-split ve-flex-v-center ve-w-100 ve-pr-1"><span>${headerText}</span>${opts.eleRhs}</div>`.appendTo(row);
@@ -617,7 +622,7 @@ class UiUtil {
 		return row;
 	}
 
-	static getAddModalRowCb (eleModalInner, labelText, objectWithProp, propName, helpText) {
+	static getAddModalRowCb(eleModalInner, labelText, objectWithProp, propName, helpText) {
 		const row = UiUtil.getAddModalRow(eleModalInner, "label").addClass(`ve-ui-modal__row--cb`);
 		if (helpText) row.tooltip(helpText);
 		row.appends(`<span>${labelText}</span>`);
@@ -639,7 +644,7 @@ class UiUtil {
 	 * @param {?string} title
 	 * @return {HTMLElementExtended}
 	 */
-	static getAddModalRowCb2 ({wrp, comp, prop, text, title = null }) {
+	static getAddModalRowCb2({ wrp, comp, prop, text, title = null }) {
 		const cb = ComponentUiUtil.getCbBool(comp, prop);
 
 		const row = ee`<label class="ve-split-v-center ve-py-1 veapp__ele-hoverable">
@@ -662,7 +667,7 @@ class UiUtil {
 	 * @param [opts.helpText] Help text (title) of select dropdown.
 	 * @param [opts.fnDisplay] Function used to map values to displayable versions.
 	 */
-	static getAddModalRowSel (eleModalInner, labelText, objectWithProp, propName, values, opts) {
+	static getAddModalRowSel(eleModalInner, labelText, objectWithProp, propName, values, opts) {
 		opts = opts || {};
 		const row = UiUtil.getAddModalRow(eleModalInner, "label").addClass(`ve-ui-modal__row--sel`);
 		if (opts.helpText) row.tooltip(opts.helpText);
@@ -676,7 +681,7 @@ class UiUtil {
 		return sel;
 	}
 
-	static _parseStrAsNumber (str, isInt) {
+	static _parseStrAsNumber(str, isInt) {
 		const wrpTree = Renderer.dice.lang.getTree3(str);
 		if (!wrpTree) return NaN;
 		const out = wrpTree.tree.evl({});
@@ -685,12 +690,12 @@ class UiUtil {
 	}
 
 	// eslint-disable-next-line vet-jquery/jquery
-	static bindTypingEnd ({ipt, $ipt, fnKeyup, fnKeypress, fnKeydown, fnClick, timeout} = {}) {
+	static bindTypingEnd({ ipt, $ipt, fnKeyup, fnKeypress, fnKeydown, fnClick, timeout } = {}) {
 		// eslint-disable-next-line vet-jquery/jquery
 		if (!ipt && !$ipt?.length) throw new Error(`"ipt" or "$ipt" must be provided!`);
 
 		// eslint-disable-next-line vet-jquery/jquery
-		ipt ||= e_({ele: $ipt[0]});
+		ipt ||= e_({ ele: $ipt[0] });
 
 		const onInput = evt => {
 			clearTimeout(timerTyping);
@@ -723,11 +728,11 @@ class UiUtil {
 				clearTimeout(timerTyping);
 				fnKeyup();
 			})
-		;
+			;
 	}
 
 	/** Brute-force select the input, in case something has delayed the rendering (e.g. a VTT application window) */
-	static async pDoForceFocus (ele, {timeout = 250} = {}) {
+	static async pDoForceFocus(ele, { timeout = 250 } = {}) {
 		if (!ele) return;
 		ele.focus();
 
@@ -747,7 +752,7 @@ UiUtil._MODAL_LAST_MOUSEDOWN = null;
 class ListSelectClickHandlerBase {
 	static _EVT_PASS_THOUGH_TAGS = new Set(["A", "BUTTON", "INPUT", "TEXTAREA"]);
 
-	constructor () {
+	constructor() {
 		this._firstSelection = null;
 		this._lastSelection = null;
 
@@ -758,22 +763,22 @@ class ListSelectClickHandlerBase {
 	 * @abstract
 	 * @return {Array}
 	 */
-	get _visibleItems () { throw new Error("Unimplemented!"); }
+	get _visibleItems() { throw new Error("Unimplemented!"); }
 
 	/**
 	 * @abstract
 	 * @return {Array}
 	 */
-	get _allItems () { throw new Error("Unimplemented!"); }
+	get _allItems() { throw new Error("Unimplemented!"); }
 
 	/** @abstract */
-	_getCb (item, opts) { throw new Error("Unimplemented!"); }
+	_getCb(item, opts) { throw new Error("Unimplemented!"); }
 
 	/** @abstract */
-	_setCheckbox (item, opts) { throw new Error("Unimplemented!"); }
+	_setCheckbox(item, opts) { throw new Error("Unimplemented!"); }
 
 	/** @abstract */
-	_setHighlighted (item, opts) { throw new Error("Unimplemented!"); }
+	_setHighlighted(item, opts) { throw new Error("Unimplemented!"); }
 
 	/**
 	 * (Public method for Plutonium use)
@@ -786,7 +791,7 @@ class ListSelectClickHandlerBase {
 	 * @param [opts.fnGetCb] Function which gets the checkbox from a list item.
 	 * @param [opts.isPassThroughEvents] If e.g. click events to links/buttons in the list item should be allowed/ignored.
 	 */
-	handleSelectClick (item, evt, opts) {
+	handleSelectClick(item, evt, opts) {
 		opts = opts || {};
 
 		if (opts.isPassThroughEvents) {
@@ -806,8 +811,8 @@ class ListSelectClickHandlerBase {
 				// on double-tapping the end of the selection, toggle it on/off
 
 				const toVal = !cb.checked;
-				this._setCheckbox(item, {...opts, toVal});
-				this._setHighlighted(item, {toVal});
+				this._setCheckbox(item, { ...opts, toVal });
+				this._setHighlighted(item, { toVal });
 			} else if (this._firstSelection === item && this._lastSelection) {
 				// If the item matches the last clicked, clear all checkboxes from our last selection
 
@@ -817,8 +822,8 @@ class ListSelectClickHandlerBase {
 				const [ixStart, ixEnd] = [ix1, ix2].sort(SortUtil.ascSort);
 				for (let i = ixStart; i <= ixEnd; ++i) {
 					const item = this._visibleItems[i];
-					this._setCheckbox(item, {...opts, toVal: false});
-					this._setHighlighted(item, {toVal: false});
+					this._setCheckbox(item, { ...opts, toVal: false });
+					this._setHighlighted(item, { toVal: false });
 				}
 
 				this._setCheckbox(item, opts);
@@ -832,7 +837,7 @@ class ListSelectClickHandlerBase {
 				const ix2Prev = this._lastSelection ? this._visibleItems.indexOf(this._lastSelection) : null;
 
 				const [ixStart, ixEnd] = [ix1, ix2].sort(SortUtil.ascSort);
-				const nxtOpts = {...opts, toVal: this._selectionInitialValue};
+				const nxtOpts = { ...opts, toVal: this._selectionInitialValue };
 				for (let i = ixStart; i <= ixEnd; ++i) {
 					const item = this._visibleItems[i];
 					this._setCheckbox(item, nxtOpts);
@@ -842,14 +847,14 @@ class ListSelectClickHandlerBase {
 				// ...except when selecting; for those between the last selection and this selection, those to unchecked
 				if (this._selectionInitialValue && ix2Prev != null) {
 					if (ix2Prev > ixEnd) {
-						const nxtOpts = {...opts, toVal: !this._selectionInitialValue};
+						const nxtOpts = { ...opts, toVal: !this._selectionInitialValue };
 						for (let i = ixEnd + 1; i <= ix2Prev; ++i) {
 							const item = this._visibleItems[i];
 							this._setCheckbox(item, nxtOpts);
 							this._setHighlighted(item, nxtOpts);
 						}
 					} else if (ix2Prev < ixStart) {
-						const nxtOpts = {...opts, toVal: !this._selectionInitialValue};
+						const nxtOpts = { ...opts, toVal: !this._selectionInitialValue };
 						for (let i = ix2Prev; i < ixStart; ++i) {
 							const item = this._visibleItems[i];
 							this._setCheckbox(item, nxtOpts);
@@ -870,11 +875,11 @@ class ListSelectClickHandlerBase {
 				if (opts.fnOnSelectionChange) opts.fnOnSelectionChange(item, cbMaster.checked);
 
 				if (!opts.isNoHighlightSelection) {
-					this._setHighlighted(item, {toVal: cbMaster.checked});
+					this._setHighlighted(item, { toVal: cbMaster.checked });
 				}
 			} else {
 				if (!opts.isNoHighlightSelection) {
-					this._setHighlighted(item, {toVal: false});
+					this._setHighlighted(item, { toVal: false });
 				}
 			}
 
@@ -889,7 +894,7 @@ class ListSelectClickHandlerBase {
 	 * @param item List item.
 	 * @param evt Click event.
 	 */
-	handleSelectClickRadio (item, evt) {
+	handleSelectClickRadio(item, evt) {
 		evt.preventDefault();
 		evt.stopPropagation();
 
@@ -901,29 +906,29 @@ class ListSelectClickHandlerBase {
 				//   be filtered/hidden, the browser won't necessarily update them all. Therefore, forcibly set
 				//   `checked = false` below.
 				cb.checked = true;
-				this._setHighlighted(itemOther, {toVal: true});
+				this._setHighlighted(itemOther, { toVal: true });
 			} else {
 				cb.checked = false;
-				this._setHighlighted(itemOther, {toVal: false});
+				this._setHighlighted(itemOther, { toVal: false });
 			}
 		});
 	}
 
-	bindSelectAllCheckbox (cbAll) {
+	bindSelectAllCheckbox(cbAll) {
 		// eslint-disable-next-line vet-jquery/jquery
 		if (globalThis.jQuery && cbAll instanceof globalThis.jQuery) {
 			if (!cbAll.length) return;
-			cbAll = e_({ele: cbAll[0]});
+			cbAll = e_({ ele: cbAll[0] });
 		}
 		if (!cbAll) return;
 		cbAll
 			.addEventListener("change", () => {
 				const isChecked = cbAll.checked;
-				this.setCheckboxes({isChecked});
+				this.setCheckboxes({ isChecked });
 			});
 	}
 
-	setCheckboxes ({isChecked, isIncludeHidden}) {
+	setCheckboxes({ isChecked, isIncludeHidden }) {
 		(isIncludeHidden ? this._allItems : this._visibleItems)
 			.forEach(item => {
 				const cb = this._getCb(item);
@@ -931,7 +936,7 @@ class ListSelectClickHandlerBase {
 				if (cb?.disabled) return;
 				if (cb) cb.checked = isChecked;
 
-				this._setHighlighted(item, {toVal: isChecked});
+				this._setHighlighted(item, { toVal: isChecked });
 			});
 	}
 }
@@ -939,19 +944,19 @@ class ListSelectClickHandlerBase {
 globalThis.ListSelectClickHandlerBase = ListSelectClickHandlerBase;
 
 class ListSelectClickHandler extends ListSelectClickHandlerBase {
-	constructor ({list}) {
+	constructor({ list }) {
 		super();
 		this._list = list;
 	}
 
-	get _visibleItems () { return this._list.visibleItems; }
+	get _visibleItems() { return this._list.visibleItems; }
 
-	get _allItems () { return this._list.items; }
+	get _allItems() { return this._list.items; }
 
-	_getCb (item, opts = {}) { return opts.fnGetCb ? opts.fnGetCb(item) : item.data.cbSel; }
+	_getCb(item, opts = {}) { return opts.fnGetCb ? opts.fnGetCb(item) : item.data.cbSel; }
 
-	_setCheckbox (item, {fnGetCb, fnOnSelectionChange, isNoHighlightSelection, toVal = true} = {}) {
-		const cbSlave = this._getCb(item, {fnGetCb, fnOnSelectionChange, isNoHighlightSelection});
+	_setCheckbox(item, { fnGetCb, fnOnSelectionChange, isNoHighlightSelection, toVal = true } = {}) {
+		const cbSlave = this._getCb(item, { fnGetCb, fnOnSelectionChange, isNoHighlightSelection });
 
 		if (!cbSlave || cbSlave.disabled) return;
 
@@ -959,7 +964,7 @@ class ListSelectClickHandler extends ListSelectClickHandlerBase {
 		if (fnOnSelectionChange) fnOnSelectionChange(item, toVal);
 	}
 
-	_setHighlighted (item, {toVal = false} = {}) {
+	_setHighlighted(item, { toVal = false } = {}) {
 		// eslint-disable-next-line vet-jquery/jquery
 		const eleTgt = globalThis.jQuery && item.ele instanceof globalThis.jQuery
 			? item.ele[0]
@@ -971,44 +976,44 @@ class ListSelectClickHandler extends ListSelectClickHandlerBase {
 
 	/* -------------------------------------------- */
 
-	setCheckbox (item, {fnGetCb, fnOnSelectionChange, isNoHighlightSelection, toVal = true} = {}) {
-		this._setCheckbox(item, {fnGetCb, fnOnSelectionChange, isNoHighlightSelection, toVal});
+	setCheckbox(item, { fnGetCb, fnOnSelectionChange, isNoHighlightSelection, toVal = true } = {}) {
+		this._setCheckbox(item, { fnGetCb, fnOnSelectionChange, isNoHighlightSelection, toVal });
 
 		if (isNoHighlightSelection) return;
 
-		this._setHighlighted(item, {toVal});
+		this._setHighlighted(item, { toVal });
 	}
 }
 
 globalThis.ListSelectClickHandler = ListSelectClickHandler;
 
 class RenderableCollectionSelectClickHandler extends ListSelectClickHandlerBase {
-	constructor ({comp, prop, namespace = null}) {
+	constructor({ comp, prop, namespace = null }) {
 		super();
 		this._comp = comp;
 		this._prop = prop;
 		this._namespace = namespace;
 	}
 
-	_getCb (item, opts) {
+	_getCb(item, opts) {
 		return item.cbSel;
 	}
 
-	_setCheckbox (item, opts) {
+	_setCheckbox(item, opts) {
 		item.cbSel.checked = opts.toVal;
 	}
 
-	_setHighlighted (item, {toVal = false} = {}) {
+	_setHighlighted(item, { toVal = false } = {}) {
 		item.wrpRow.toggleClass("list-multi-selected", toVal);
 	}
 
-	get _allItems () {
-		const rendereds = this._comp._getRenderedCollection({prop: this._prop, namespace: this._namespace});
+	get _allItems() {
+		const rendereds = this._comp._getRenderedCollection({ prop: this._prop, namespace: this._namespace });
 		return this._comp._state[this._prop]
 			.map(ent => rendereds[ent.id]);
 	}
 
-	get _visibleItems () {
+	get _visibleItems() {
 		return this._allItems;
 	}
 }
@@ -1016,18 +1021,18 @@ class RenderableCollectionSelectClickHandler extends ListSelectClickHandlerBase 
 globalThis.RenderableCollectionSelectClickHandler = RenderableCollectionSelectClickHandler;
 
 class ListUiUtil {
-	static bindPreviewButton (page, allData, item, btnShowHidePreview, {fnGetPreviewStats} = {}) {
+	static bindPreviewButton(page, allData, item, btnShowHidePreview, { fnGetPreviewStats } = {}) {
 		btnShowHidePreview.addEventListener("click", evt => {
 			const entity = allData[item.ix];
 			page = page || entity?.__prop;
 
 			const elePreviewWrp = this.getOrAddListItemPreviewLazy(item);
 
-			this.handleClickBtnShowHideListPreview(evt, page, entity, btnShowHidePreview, elePreviewWrp, {fnGetPreviewStats});
+			this.handleClickBtnShowHideListPreview(evt, page, entity, btnShowHidePreview, elePreviewWrp, { fnGetPreviewStats });
 		});
 	}
 
-	static handleClickBtnShowHideListPreview (evt, page, entity, btnShowHidePreview, elePreviewWrp, {nxtText = null, fnGetPreviewStats} = {}) {
+	static handleClickBtnShowHideListPreview(evt, page, entity, btnShowHidePreview, elePreviewWrp, { nxtText = null, fnGetPreviewStats } = {}) {
 		evt.stopPropagation();
 		evt.preventDefault();
 
@@ -1049,14 +1054,14 @@ class ListUiUtil {
 
 		elePreviewWrp.dataset.dataType = isFluff ? "fluff" : "stats";
 
-		const doAppendStatView = () => (fnGetPreviewStats || Renderer.hover.getHoverContent_stats)(page, entity, {isStatic: true}).appendTo(elePreviewWrpInner);
+		const doAppendStatView = () => (fnGetPreviewStats || Renderer.hover.getHoverContent_stats)(page, entity, { isStatic: true }).appendTo(elePreviewWrpInner);
 
 		if (!evt.shiftKey || !UrlUtil.URL_TO_HASH_BUILDER[page]) {
 			doAppendStatView();
 			return;
 		}
 
-		Renderer.utils.pGetProxyFluff({entity})
+		Renderer.utils.pGetProxyFluff({ entity })
 			.then(fluffEntity => {
 				// Avoid clobbering existing elements, as other events might have updated the preview area while we were
 				//  loading the fluff.
@@ -1067,7 +1072,7 @@ class ListUiUtil {
 			});
 	}
 
-	static getOrAddListItemPreviewLazy (item) {
+	static getOrAddListItemPreviewLazy(item) {
 		// We lazily add the preview UI, to mitigate rendering performance issues
 		let elePreviewWrp;
 		if (item.ele.children.length === 1) {
@@ -1075,15 +1080,15 @@ class ListUiUtil {
 				tag: "div",
 				clazz: "ve-hidden ve-flex",
 				children: [
-					e_({tag: "div", clazz: "ve-col-0-5"}),
-					e_({tag: "div", clazz: "ve-col-11-5 ve-ui-list__wrp-preview ve-py-2 ve-pr-2"}),
+					e_({ tag: "div", clazz: "ve-col-0-5" }),
+					e_({ tag: "div", clazz: "ve-col-11-5 ve-ui-list__wrp-preview ve-py-2 ve-pr-2" }),
 				],
 			}).appendTo(item.ele);
 		} else elePreviewWrp = item.ele.lastElementChild;
 		return elePreviewWrp;
 	}
 
-	static bindPreviewAllButton (btnAll, list) {
+	static bindPreviewAllButton(btnAll, list) {
 		if (!btnAll) return;
 
 		btnAll
@@ -1118,7 +1123,7 @@ class ListUiUtil {
 	static ListSyntax = class {
 		static _READONLY_WALKER = null;
 
-		constructor (
+		constructor(
 			{
 				fnGetDataList,
 				pFnGetFluff,
@@ -1128,9 +1133,9 @@ class ListUiUtil {
 			this._pFnGetFluff = pFnGetFluff;
 		}
 
-		get _dataList () { return this._fnGetDataList(); }
+		get _dataList() { return this._fnGetDataList(); }
 
-		build () {
+		build() {
 			return {
 				name: {
 					help: `"name:<query>" ("/query/" for regex; "!query" and "!/query/" to invert) to search by name.`,
@@ -1158,7 +1163,7 @@ class ListUiUtil {
 					help: `"text:<query>" ("/query/" for regex; "!query" and "!/query/" to invert) to search within stat blocks plus info.`,
 					fn: async (listItem, searchTerm) => {
 						if (listItem.data._textCacheAll == null) {
-							const {textCacheStats, textCacheFluff, textCacheAll} = await this._pGetSearchCacheAll(this._dataList[listItem.ix], {textCacheStats: listItem.data._textCacheStats, textCacheFluff: listItem.data._textCacheFluff});
+							const { textCacheStats, textCacheFluff, textCacheAll } = await this._pGetSearchCacheAll(this._dataList[listItem.ix], { textCacheStats: listItem.data._textCacheStats, textCacheFluff: listItem.data._textCacheFluff });
 							listItem.data._textCacheStats = listItem.data._textCacheStats || textCacheStats;
 							listItem.data._textCacheFluff = listItem.data._textCacheFluff || textCacheFluff;
 							listItem.data._textCacheAll = textCacheAll;
@@ -1170,7 +1175,7 @@ class ListUiUtil {
 			};
 		}
 
-		_listSyntax_isTextMatch (str, searchTerm) {
+		_listSyntax_isTextMatch(str, searchTerm) {
 			if (!str) return false;
 			if (searchTerm instanceof RegExp) return searchTerm.test(str);
 			return str.includes(searchTerm);
@@ -1178,11 +1183,11 @@ class ListUiUtil {
 
 		// TODO(Future) the ideal solution to this is to render every entity to plain text (or failing that, Markdown) and
 		//   indexing that text with e.g. elasticlunr.
-		_getSearchCacheStats (entity) {
+		_getSearchCacheStats(entity) {
 			return `${this._getSearchCache_name(entity)} -- ${this._getSearchCache_entries(entity)}`;
 		}
 
-		_getSearchCache_name (entity) {
+		_getSearchCache_name(entity) {
 			return Renderer.stripTags(entity.name).toLowerCase();
 		}
 
@@ -1190,20 +1195,20 @@ class ListUiUtil {
 			"entries",
 		];
 
-		_getSearchCache_entries (entity, {indexableProps = null} = {}) {
+		_getSearchCache_entries(entity, { indexableProps = null } = {}) {
 			if ((indexableProps || this.constructor._INDEXABLE_PROPS_ENTRIES).every(it => !entity[it])) return "";
-			const ptrOut = {_: ""};
+			const ptrOut = { _: "" };
 			(indexableProps || this.constructor._INDEXABLE_PROPS_ENTRIES).forEach(it => this._getSearchCache_handleEntryProp(entity, it, ptrOut));
 			return ptrOut._;
 		}
 
-		_getSearchCache_handleEntryProp (entity, prop, ptrOut) {
+		_getSearchCache_handleEntryProp(entity, prop, ptrOut) {
 			if (!entity[prop]) return;
 
 			this._getSearchCache_handleEntry(entity[prop], ptrOut);
 		}
 
-		_getSearchCache_handleEntry (entry, ptrOut) {
+		_getSearchCache_handleEntry(entry, ptrOut) {
 			this.constructor._READONLY_WALKER = this.constructor._READONLY_WALKER || MiscUtil.getWalker({
 				keyBlocklist: new Set(["type", "colStyles", "style"]),
 				isNoModification: true,
@@ -1217,18 +1222,18 @@ class ListUiUtil {
 			);
 		}
 
-		_getSearchCache_handleString (ptrOut, str) {
+		_getSearchCache_handleString(ptrOut, str) {
 			ptrOut._ += `${Renderer.stripTags(str).toLowerCase()} -- `;
 		}
 
-		async _pGetSearchCacheFluff (entity) {
+		async _pGetSearchCacheFluff(entity) {
 			const fluff = this._pFnGetFluff ? await this._pFnGetFluff(entity) : null;
 			return fluff
-				? `${this._getSearchCache_name(entity)} -- ${this._getSearchCache_entries(fluff, {indexableProps: ["entries"]})}`
+				? `${this._getSearchCache_name(entity)} -- ${this._getSearchCache_entries(fluff, { indexableProps: ["entries"] })}`
 				: this._getSearchCache_name(entity);
 		}
 
-		async _pGetSearchCacheAll (entity, {textCacheStats = null, textCacheFluff = null}) {
+		async _pGetSearchCacheAll(entity, { textCacheStats = null, textCacheFluff = null }) {
 			textCacheStats = textCacheStats || this._getSearchCacheStats(entity);
 			textCacheFluff = textCacheFluff || await this._pGetSearchCacheFluff(entity);
 			return {
@@ -1271,7 +1276,7 @@ class ProfUiUtil {
 	 * @param [opts] Options object.
 	 * @param [opts.isSimple] If the cycler only has "not proficient" and "proficient" options
 	 */
-	static getProfCycler (state = 0, opts) {
+	static getProfCycler(state = 0, opts) {
 		opts = opts || {};
 
 		const STATES = opts.isSimple ? Object.keys(this._PROF_TO_FULL).slice(0, 2) : Object.keys(this._PROF_TO_FULL);
@@ -1312,7 +1317,7 @@ class ProfUiUtil {
 }
 
 class TabUiUtilBase {
-	static decorate (obj, {isInitMeta = false} = {}) {
+	static decorate(obj, { isInitMeta = false } = {}) {
 		if (isInitMeta) {
 			obj.__meta = {};
 			obj._meta = obj._getProxy("meta", obj.__meta);
@@ -1320,7 +1325,7 @@ class TabUiUtilBase {
 
 		obj.__tabState = {};
 
-		obj._getTabProps = function ({propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP} = {}) {
+		obj._getTabProps = function ({ propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP } = {}) {
 			return {
 				propProxy,
 				_propProxy: `_${propProxy}`,
@@ -1343,15 +1348,15 @@ class TabUiUtilBase {
 		) {
 			if (!tabMetas.length) throw new Error(`One or more tab meta must be specified!`);
 
-			obj._resetTabs({tabGroup});
+			obj._resetTabs({ tabGroup });
 
 			const isSingleTab = tabMetas.length === 1;
 
-			const {propActive, _propProxy, __propProxy} = obj._getTabProps({propProxy, tabGroup});
+			const { propActive, _propProxy, __propProxy } = obj._getTabProps({ propProxy, tabGroup });
 
 			this[__propProxy][propActive] = this[__propProxy][propActive] || 0;
 
-			const dispTabTitle = obj.__getDispTabTitle({isSingleTab});
+			const dispTabTitle = obj.__getDispTabTitle({ isSingleTab });
 
 			const renderTabMetas_standard = (it, i) => {
 				const btnTab = obj.__getBtnTab({
@@ -1363,7 +1368,7 @@ class TabUiUtilBase {
 					isStacked,
 				});
 
-				const wrpTab = obj.__getWrpTab({tabMeta: it, ixTab: i});
+				const wrpTab = obj.__getWrpTab({ tabMeta: it, ixTab: i });
 
 				return {
 					...it,
@@ -1381,11 +1386,11 @@ class TabUiUtilBase {
 			};
 
 			const tabMetasOut = tabMetas.map((it, i) => {
-				if (it.type) return obj.__renderTypedTabMeta({tabMeta: it, ixTab: i, isStacked});
+				if (it.type) return obj.__renderTypedTabMeta({ tabMeta: it, ixTab: i, isStacked });
 				return renderTabMetas_standard(it, i);
 			}).filter(Boolean);
 
-			if (eleParent) obj.__renderTabs_addToParent({dispTabTitle, eleParent, tabMetasOut, additionalClassesWrpHeads, isStacked});
+			if (eleParent) obj.__renderTabs_addToParent({ dispTabTitle, eleParent, tabMetasOut, additionalClassesWrpHeads, isStacked });
 
 			const hkActiveTab = () => {
 				tabMetasOut.forEach(it => {
@@ -1441,7 +1446,7 @@ class TabUiUtilBase {
 			);
 		};
 
-		obj.__renderTabs_addToParent = function ({dispTabTitle, eleParent, tabMetasOut, additionalClassesWrpHeads, isStacked}) {
+		obj.__renderTabs_addToParent = function ({ dispTabTitle, eleParent, tabMetasOut, additionalClassesWrpHeads, isStacked }) {
 			const hasBorder = tabMetasOut.some(it => it.hasBorder);
 			ee`<div class="ve-flex-col ve-w-100 ve-h-100">
 				${dispTabTitle}
@@ -1452,63 +1457,63 @@ class TabUiUtilBase {
 			</div>`.appendTo(eleParent);
 		};
 
-		obj._resetTabs = function ({tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP} = {}) {
+		obj._resetTabs = function ({ tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP } = {}) {
 			if (!obj.__tabState[tabGroup]) return;
 			obj.__tabState[tabGroup].fnReset();
 			delete obj.__tabState[tabGroup];
 		};
 
-		obj._hasPrevTab = function ({propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP} = {}) {
-			return obj.__hasTab({propProxy, tabGroup, offset: -1});
+		obj._hasPrevTab = function ({ propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP } = {}) {
+			return obj.__hasTab({ propProxy, tabGroup, offset: -1 });
 		};
-		obj._hasNextTab = function ({propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP} = {}) {
-			return obj.__hasTab({propProxy, tabGroup, offset: 1});
+		obj._hasNextTab = function ({ propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP } = {}) {
+			return obj.__hasTab({ propProxy, tabGroup, offset: 1 });
 		};
 
-		obj.__hasTab = function ({propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP, offset}) {
-			const {propActive, _propProxy} = obj._getTabProps({propProxy, tabGroup});
+		obj.__hasTab = function ({ propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP, offset }) {
+			const { propActive, _propProxy } = obj._getTabProps({ propProxy, tabGroup });
 			const ixActive = obj[_propProxy][propActive];
 			return !!(obj.__tabState[tabGroup]?.tabMetasOut && obj.__tabState[tabGroup]?.tabMetasOut[ixActive + offset]);
 		};
 
-		obj._doSwitchToPrevTab = function ({propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP} = {}) {
-			return obj.__doSwitchToTab({propProxy, tabGroup, offset: -1});
+		obj._doSwitchToPrevTab = function ({ propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP } = {}) {
+			return obj.__doSwitchToTab({ propProxy, tabGroup, offset: -1 });
 		};
-		obj._doSwitchToNextTab = function ({propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP} = {}) {
-			return obj.__doSwitchToTab({propProxy, tabGroup, offset: 1});
+		obj._doSwitchToNextTab = function ({ propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP } = {}) {
+			return obj.__doSwitchToTab({ propProxy, tabGroup, offset: 1 });
 		};
 
-		obj.__doSwitchToTab = function ({propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP, offset}) {
-			if (!obj.__hasTab({propProxy, tabGroup, offset})) return;
-			const {propActive, _propProxy} = obj._getTabProps({propProxy, tabGroup});
+		obj.__doSwitchToTab = function ({ propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP, offset }) {
+			if (!obj.__hasTab({ propProxy, tabGroup, offset })) return;
+			const { propActive, _propProxy } = obj._getTabProps({ propProxy, tabGroup });
 			obj[_propProxy][propActive] = obj[_propProxy][propActive] + offset;
 		};
 
-		obj._addHookActiveTab = function (hook, {propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP} = {}) {
-			const {propActive} = obj._getTabProps({propProxy, tabGroup});
+		obj._addHookActiveTab = function (hook, { propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP } = {}) {
+			const { propActive } = obj._getTabProps({ propProxy, tabGroup });
 			this._addHook(propProxy, propActive, hook);
 		};
 
-		obj._getIxActiveTab = function ({propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP} = {}) {
-			const {propActive, _propProxy} = obj._getTabProps({propProxy, tabGroup});
+		obj._getIxActiveTab = function ({ propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP } = {}) {
+			const { propActive, _propProxy } = obj._getTabProps({ propProxy, tabGroup });
 			return obj[_propProxy][propActive];
 		};
 
-		obj._setIxActiveTab = function ({propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP, ixActiveTab} = {}) {
-			const {propActive, _propProxy} = obj._getTabProps({propProxy, tabGroup});
+		obj._setIxActiveTab = function ({ propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP, ixActiveTab } = {}) {
+			const { propActive, _propProxy } = obj._getTabProps({ propProxy, tabGroup });
 			obj[_propProxy][propActive] = ixActiveTab;
 		};
 
-		obj._getActiveTab = function ({propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP} = {}) {
+		obj._getActiveTab = function ({ propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP } = {}) {
 			const tabState = obj.__tabState[tabGroup];
-			const ixActiveTab = obj._getIxActiveTab({propProxy, tabGroup});
+			const ixActiveTab = obj._getIxActiveTab({ propProxy, tabGroup });
 			return tabState.tabMetasOut[ixActiveTab];
 		};
 
-		obj._setActiveTab = function ({propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP, tab}) {
+		obj._setActiveTab = function ({ propProxy = TabUiUtilBase._DEFAULT_PROP_PROXY, tabGroup = TabUiUtilBase._DEFAULT_TAB_GROUP, tab }) {
 			const tabState = obj.__tabState[tabGroup];
 			const ix = tabState.tabMetasOut.indexOf(tab);
-			obj._setIxActiveTab({propProxy, tabGroup, ixActiveTab: ix});
+			obj._setIxActiveTab({ propProxy, tabGroup, ixActiveTab: ix });
 		};
 
 		obj.__getBtnTab = function () { throw new Error("Unimplemented!"); };
@@ -1521,7 +1526,7 @@ TabUiUtilBase._DEFAULT_TAB_GROUP = "_default";
 TabUiUtilBase._DEFAULT_PROP_PROXY = "meta";
 
 TabUiUtilBase.TabMeta = class {
-	constructor ({name, icon = null, type = null, buttons = null, isSplitStart = false} = {}) {
+	constructor({ name, icon = null, type = null, buttons = null, isSplitStart = false } = {}) {
 		this.name = name;
 		this.icon = icon;
 		this.type = type;
@@ -1531,26 +1536,26 @@ TabUiUtilBase.TabMeta = class {
 };
 
 class TabUiUtil extends TabUiUtilBase {
-	static decorate (obj, {isInitMeta = false} = {}) {
-		super.decorate(obj, {isInitMeta});
+	static decorate(obj, { isInitMeta = false } = {}) {
+		super.decorate(obj, { isInitMeta });
 
-		obj.__getBtnTab = function ({tabMeta, _propProxy, propActive, ixTab, isStacked = false}) {
+		obj.__getBtnTab = function ({ tabMeta, _propProxy, propActive, ixTab, isStacked = false }) {
 			return ee`<button class="ve-btn ve-btn-default ve-ui-tab__btn-tab-head ${isStacked ? `ve-ui-tab__btn-tab-head--stacked` : ""} ve-pt-2p ve-px-4p ve-pb-0 ${tabMeta.isHeadHidden ? "ve-hidden" : ""}" ${tabMeta.title ? `title="${tabMeta.title.qq()}"` : ""}>${tabMeta.name.qq()}</button>`
 				.onn("click", () => obj[_propProxy][propActive] = ixTab);
 		};
 
-		obj.__getWrpTab = function ({tabMeta}) {
+		obj.__getWrpTab = function ({ tabMeta }) {
 			return ee`<div class="ve-ui-tab__wrp-tab-body ve-flex-col ve-hidden ${tabMeta.hasBorder ? "ve-ui-tab__wrp-tab-body--border" : ""} ${tabMeta.hasBackground ? "ve-ui-tab__wrp-tab-body--background" : ""}"></div>`;
 		};
 
-		obj.__renderTypedTabMeta = function ({tabMeta, ixTab, isStacked = false}) {
+		obj.__renderTypedTabMeta = function ({ tabMeta, ixTab, isStacked = false }) {
 			switch (tabMeta.type) {
-				case "buttons": return obj.__renderTypedTabMeta_buttons({tabMeta, ixTab, isStacked});
+				case "buttons": return obj.__renderTypedTabMeta_buttons({ tabMeta, ixTab, isStacked });
 				default: throw new Error(`Unhandled tab type "${tabMeta.type}"`);
 			}
 		};
 
-		obj.__renderTypedTabMeta_buttons = function ({tabMeta, ixTab, isStacked = false}) {
+		obj.__renderTypedTabMeta_buttons = function ({ tabMeta, ixTab, isStacked = false }) {
 			const btns = tabMeta.buttons
 				.map((meta, j) => {
 					const btn = ee`<button class="ve-btn ve-ui-tab__btn-tab-head ${isStacked ? `ve-ui-tab__btn-tab-head--stacked` : ""} ve-pt-2p ve-px-4p ve-pb-0 ve-bbr-0 ve-bbl-0 ${UiUtil.getBtnClassName(meta.type)}" ${meta.title ? `title="${meta.title.qq()}"` : ""}>${meta.html}</button>`
@@ -1593,7 +1598,7 @@ class TabUiUtil extends TabUiUtilBase {
 globalThis.TabUiUtil = TabUiUtil;
 
 TabUiUtil.TabMeta = class extends TabUiUtilBase.TabMeta {
-	constructor (opts) {
+	constructor(opts) {
 		super(opts);
 		this.title = opts.title;
 		this.hasBorder = !!opts.hasBorder;
@@ -1604,19 +1609,19 @@ TabUiUtil.TabMeta = class extends TabUiUtilBase.TabMeta {
 };
 
 class TabUiUtilSide extends TabUiUtilBase {
-	static decorate (obj, {isInitMeta = false} = {}) {
-		super.decorate(obj, {isInitMeta});
+	static decorate(obj, { isInitMeta = false } = {}) {
+		super.decorate(obj, { isInitMeta });
 
-		obj.__getBtnTab = function ({isSingleTab, tabMeta, _propProxy, propActive, ixTab}) {
+		obj.__getBtnTab = function ({ isSingleTab, tabMeta, _propProxy, propActive, ixTab }) {
 			return isSingleTab ? null : ee`<button class="ve-btn ve-btn-default ve-btn-sm ve-ui-tab-side__btn-tab ve-mb-2 ve-br-0 ve-btr-0 ve-bbr-0 ve-text-left ve-flex-v-center" title="${tabMeta.title ? tabMeta.title.qq() : tabMeta.name.qq()}"><div class="${tabMeta.icon} ve-ui-tab-side__icon-tab ve-mr-2 ve-mobile-lg__mr-0 ve-text-center"></div><div class="ve-mobile-lg__hidden">${tabMeta.name.qq()}</div></button>`
 				.onn("click", () => this[_propProxy][propActive] = ixTab);
 		};
 
-		obj.__getWrpTab = function ({tabMeta}) {
+		obj.__getWrpTab = function ({ tabMeta }) {
 			return ee`<div class="ve-flex-col ve-w-100 ve-h-100 ve-ui-tab-side__wrp-tab ${tabMeta.isNoPadding ? "" : "ve-px-3 ve-py-2"} ve-overflow-y-auto"></div>`;
 		};
 
-		obj.__renderTabs_addToParent = function ({dispTabTitle, eleParent, tabMetasOut}) {
+		obj.__renderTabs_addToParent = function ({ dispTabTitle, eleParent, tabMetasOut }) {
 			ee`<div class="ve-flex-col ve-w-100 ve-h-100">
 				${dispTabTitle}
 				<div class="ve-flex ve-w-100 ve-h-100 ve-min-h-0">
@@ -1626,14 +1631,14 @@ class TabUiUtilSide extends TabUiUtilBase {
 			</div>`.appendTo(eleParent);
 		};
 
-		obj.__renderTypedTabMeta = function ({tabMeta, ixTab}) {
+		obj.__renderTypedTabMeta = function ({ tabMeta, ixTab }) {
 			switch (tabMeta.type) {
-				case "buttons": return obj.__renderTypedTabMeta_buttons({tabMeta, ixTab});
+				case "buttons": return obj.__renderTypedTabMeta_buttons({ tabMeta, ixTab });
 				default: throw new Error(`Unhandled tab type "${tabMeta.type}"`);
 			}
 		};
 
-		obj.__renderTypedTabMeta_buttons = function ({tabMeta, ixTab}) {
+		obj.__renderTypedTabMeta_buttons = function ({ tabMeta, ixTab }) {
 			const btns = tabMeta.buttons.map((meta, j) => {
 				const btn = ee`<button class="ve-btn ${UiUtil.getBtnClassName(meta.type)} ve-btn-sm" ${meta.title ? `title="${meta.title.qq()}"` : ""}>${meta.html}</button>`
 					.onn("click", evt => {
@@ -1673,7 +1678,7 @@ class TabUiUtilSide extends TabUiUtilBase {
 			};
 		};
 
-		obj.__getDispTabTitle = function ({isSingleTab}) {
+		obj.__getDispTabTitle = function ({ isSingleTab }) {
 			return ee`<div class="ve-ui-tab-side__disp-active-tab-name ${isSingleTab ? `ve-ui-tab-side__disp-active-tab-name--single` : ""} ve-bold"></div>`;
 		};
 	}
@@ -1683,16 +1688,16 @@ globalThis.TabUiUtilSide = TabUiUtilSide;
 
 // TODO have this respect the blocklist?
 class SearchUiUtil {
-	static async pDoGlobalInit () {
+	static async pDoGlobalInit() {
 		elasticlunr.clearStopWords();
 		await Renderer.item.pPopulatePropertyAndTypeReference();
 	}
 
-	static _isNoHoverCat (cat) {
+	static _isNoHoverCat(cat) {
 		return SearchUiUtil.NO_HOVER_CATEGORIES.has(cat);
 	}
 
-	static async pGetContentIndices (options) {
+	static async pGetContentIndices(options) {
 		options = options || {};
 
 		const availContent = {};
@@ -1765,7 +1770,7 @@ class SearchUiUtil {
 			if (
 				SearchUiUtil._isNoHoverCat(d.c)
 				|| fromDeepIndex(d)
-				|| ExcludeUtil.isExcluded(d.u, Parser.pageCategoryToProp(d.c), d.s, {isNoCount: true})
+				|| ExcludeUtil.isExcluded(d.u, Parser.pageCategoryToProp(d.c), d.s, { isNoCount: true })
 			) return;
 			d.cf = d.c === Parser.CAT_ID_CREATURE ? I18nUtil.get("common.creature") : Parser.pageCategoryToFull(d.c);
 			if (isAlternate) d.cf = `alt_${d.cf}`;
@@ -1779,8 +1784,8 @@ class SearchUiUtil {
 		Object.values(additionalData).forEach(arr => arr.forEach(d => handleDataItem(d)));
 		Object.values(alternateData).forEach(arr => arr.forEach(d => handleDataItem(d, true)));
 
-		const pAddPrereleaseBrewIndex = async ({brewUtil}) => {
-			const brewIndex = await brewUtil.pGetSearchIndex({id: availContent.ALL.documentStore.length});
+		const pAddPrereleaseBrewIndex = async ({ brewUtil }) => {
+			const brewIndex = await brewUtil.pGetSearchIndex({ id: availContent.ALL.documentStore.length });
 
 			brewIndex.forEach(d => {
 				if (SearchUiUtil._isNoHoverCat(d.c) || fromDeepIndex(d)) return;
@@ -1792,8 +1797,8 @@ class SearchUiUtil {
 			});
 		};
 
-		await pAddPrereleaseBrewIndex({brewUtil: PrereleaseUtil});
-		await pAddPrereleaseBrewIndex({brewUtil: BrewUtil2});
+		await pAddPrereleaseBrewIndex({ brewUtil: PrereleaseUtil });
+		await pAddPrereleaseBrewIndex({ brewUtil: BrewUtil2 });
 
 		return availContent;
 	}
@@ -1807,15 +1812,15 @@ SearchUiUtil.NO_HOVER_CATEGORIES = new Set([
 
 // based on DM screen's AddMenuSearchTab
 class SearchWidget {
-	static getSearchNoResults () {
+	static getSearchNoResults() {
 		return `<div class="ve-ui-search__message"><i>No results.</i></div>`;
 	}
 
-	static getSearchLoading () {
+	static getSearchLoading() {
 		return `<div class="ve-ui-search__message"><i>\u2022\u2022\u2022</i></div>`;
 	}
 
-	static getSearchEnter () {
+	static getSearchEnter() {
 		return `<div class="ve-ui-search__message"><i>Enter a search.</i></div>`;
 	}
 
@@ -1831,10 +1836,10 @@ class SearchWidget {
 	 * @param opts.flags.doClickFirst Flag tracking "should first result get clicked"
 	 * @param opts.ptrRows Pointer to array of rows.
 	 */
-	static bindAutoSearch (iptSearch, opts) {
+	static bindAutoSearch(iptSearch, opts) {
 		if (opts.fnSearch && opts.pFnSearch) throw new Error(`Options "fnSearch" and "pFnSearch" are mutually exclusive!`);
 
-		iptSearch = e_({ele: iptSearch});
+		iptSearch = e_({ ele: iptSearch });
 
 		// Chain each search from the previous, to ensure the last search wins
 		let pSearching = null;
@@ -1908,7 +1913,7 @@ class SearchWidget {
 		});
 	}
 
-	static bindRowHandlers ({result, row, ptrRows, fnHandleClick, iptSearch}) {
+	static bindRowHandlers({ result, row, ptrRows, fnHandleClick, iptSearch }) {
 		return row
 			.onn("keydown", evt => {
 				switch (evt.key) {
@@ -1935,12 +1940,12 @@ class SearchWidget {
 			.onn("click", () => fnHandleClick(result));
 	}
 
-	static docToPageSourceHash (doc) {
+	static docToPageSourceHash(doc) {
 		const page = UrlUtil.categoryToHoverPage(doc.c);
 		const source = doc.s;
 		const hash = doc.u;
 
-		return {page, source, hash};
+		return { page, source, hash };
 	}
 
 	/**
@@ -1952,7 +1957,7 @@ class SearchWidget {
 	 * @param options.searchOptions Override for default elasticlunr search options.
 	 * @param options.fnTransform Function which transforms the document before passing it back to cbSearch.
 	 */
-	constructor (indexes, cbSearch, options) {
+	constructor(indexes, cbSearch, options) {
 		options = options || {};
 
 		this._indexes = indexes;
@@ -1966,7 +1971,7 @@ class SearchWidget {
 			doClickFirst: false,
 			isWait: false,
 		};
-		this._ptrRows = {_: []};
+		this._ptrRows = { _: [] };
 
 		this._selCat = null;
 		this._iptSearch = null;
@@ -1975,43 +1980,43 @@ class SearchWidget {
 		this._rendered = null;
 	}
 
-	static pDoGlobalInit () {
+	static pDoGlobalInit() {
 		if (!SearchWidget.P_LOADING_CONTENT) {
 			SearchWidget.P_LOADING_CONTENT = (async () => {
-				Object.assign(SearchWidget.CONTENT_INDICES, await SearchUiUtil.pGetContentIndices({additionalIndices: ["item"], alternateIndices: ["spell"]}));
+				Object.assign(SearchWidget.CONTENT_INDICES, await SearchUiUtil.pGetContentIndices({ additionalIndices: ["item"], alternateIndices: ["spell"] }));
 			})();
 		}
 		return SearchWidget.P_LOADING_CONTENT;
 	}
 
-	__getSearchOptions () {
+	__getSearchOptions() {
 		return this._searchOptions || {
 			fields: {
-				n: {boost: 5, expand: true},
-				cn: {boost: 5, expand: true},
-				s: {expand: true},
+				n: { boost: 5, expand: true },
+				cn: { boost: 5, expand: true },
+				s: { expand: true },
 			},
 			bool: "AND",
 			expand: true,
 		};
 	}
 
-	__getRow (r) {
+	__getRow(r) {
 		return ee`<div class="ve-ui-search__row" tabindex="0">
 			<span>${r.doc.cn || r.doc.n}</span>
 			<span>${r.doc.s ? `<i title="${Parser.sourceJsonToFull(r.doc.s)}">${Parser.sourceJsonToAbv(r.doc.s)}${r.doc.p ? ` p${r.doc.p}` : ""}</i>` : ""}</span>
 		</div>`;
 	}
 
-	static __getAllTitle () {
+	static __getAllTitle() {
 		return "All Categories";
 	}
 
-	static __getCatOptionText (it) {
+	static __getCatOptionText(it) {
 		return it;
 	}
 
-	getWrpSearch () {
+	getWrpSearch() {
 		if (!this._rendered) {
 			this._render();
 			this.__pDoSearch().then(null);
@@ -2019,27 +2024,27 @@ class SearchWidget {
 		return this._rendered;
 	}
 
-	__showMsgInputRequired () {
+	__showMsgInputRequired() {
 		this._flags.isWait = true;
 		this._wrpResults.empty().appends(SearchWidget.getSearchEnter());
 	}
 
-	__showMsgWait () {
+	__showMsgWait() {
 		this._wrpResults.empty().appends(SearchWidget.getSearchLoading());
 	}
 
-	__showMsgNoResults () {
+	__showMsgNoResults() {
 		this._flags.isWait = true;
 		this._wrpResults.empty().appends(SearchWidget.getSearchNoResults());
 	}
 
-	async __pDoSearch () {
+	async __pDoSearch() {
 		const searchTerm = this._iptSearch.val().trim();
 
 		const index = this._indexes[this._cat];
-		const results = await globalThis.OmnisearchBacking.pGetFilteredResults(index.search(searchTerm, this.__getSearchOptions()), {searchTerm});
+		const results = await globalThis.OmnisearchBacking.pGetFilteredResults(index.search(searchTerm, this.__getSearchOptions()), { searchTerm });
 
-		const {toProcess, resultCount} = (() => {
+		const { toProcess, resultCount } = (() => {
 			if (results.length) {
 				if (this._fnFilterResults) {
 					const filtered = results.filter(it => this._fnFilterResults(it.doc));
@@ -2064,14 +2069,14 @@ class SearchWidget {
 
 				// Otherwise, we have no search term, so show a default list of results
 				if (this._fnFilterResults) {
-					const filtered = Object.values(index.documentStore.docs).filter(it => this._fnFilterResults(it)).map(it => ({doc: it}));
+					const filtered = Object.values(index.documentStore.docs).filter(it => this._fnFilterResults(it)).map(it => ({ doc: it }));
 					return {
 						toProcess: filtered.slice(0, UiUtil.SEARCH_RESULTS_CAP),
 						resultCount: filtered.length,
 					};
 				} else {
 					return {
-						toProcess: Object.values(index.documentStore.docs).slice(0, UiUtil.SEARCH_RESULTS_CAP).map(it => ({doc: it})),
+						toProcess: Object.values(index.documentStore.docs).slice(0, UiUtil.SEARCH_RESULTS_CAP).map(it => ({ doc: it })),
 						resultCount: Object.values(index.documentStore.docs).length,
 					};
 				}
@@ -2097,7 +2102,7 @@ class SearchWidget {
 
 			res.forEach(r => {
 				const row = this.__getRow(r).appendTo(this._wrpResults);
-				SearchWidget.bindRowHandlers({result: r, row, ptrRows: this._ptrRows, fnHandleClick: handleClick, iptSearch: this._iptSearch});
+				SearchWidget.bindRowHandlers({ result: r, row, ptrRows: this._ptrRows, fnHandleClick: handleClick, iptSearch: this._iptSearch });
 				this._ptrRows._.push(row);
 			});
 
@@ -2115,7 +2120,7 @@ class SearchWidget {
 		}
 	}
 
-	_render () {
+	_render() {
 		if (this._rendered) return;
 
 		this._iptSearch = ee`<input class="ve-ui-search__ipt-search search ve-form-control" autocomplete="off" placeholder="Search...">`;
@@ -2158,16 +2163,16 @@ class SearchWidget {
 		});
 	}
 
-	doFocus () {
+	doFocus() {
 		this._iptSearch.focuse();
 	}
 
-	static async pAddToIndexes (prop, entry) {
+	static async pAddToIndexes(prop, entry) {
 		const nextId = Object.values(SearchWidget.CONTENT_INDICES.ALL.documentStore.docs).length;
 
 		const indexer = new Omnidexer(nextId);
 
-		const toIndex = {[prop]: [entry]};
+		const toIndex = { [prop]: [entry] };
 
 		const toIndexMultiPart = Omnidexer.TO_INDEX__FROM_INDEX_JSON.filter(it => it.listProp === prop);
 		for (const it of toIndexMultiPart) await indexer.pAddToIndex(it, toIndex);
@@ -2184,7 +2189,7 @@ class SearchWidget {
 	}
 
 	// region entity searches
-	static async pGetUserSpellSearch (opts) {
+	static async pGetUserSpellSearch(opts) {
 		opts = opts || {};
 
 		const styleHint = opts.styleHint || VetoolsConfig.get("styleSwitcher", "style");
@@ -2195,7 +2200,7 @@ class SearchWidget {
 			fnTransform: doc => {
 				const cpy = MiscUtil.copyFast(doc);
 				Object.assign(cpy, SearchWidget.docToPageSourceHash(cpy));
-				const {name: hashNameRaw} = UrlUtil.autoDecodeHash(cpy.u);
+				const { name: hashNameRaw } = UrlUtil.autoDecodeHash(cpy.u);
 				const hashName = hashNameRaw.toTitleCase();
 				const isRename = hashName.toLowerCase() !== cpy.cn.toLowerCase();
 				const pts = [
@@ -2219,7 +2224,7 @@ class SearchWidget {
 		);
 	}
 
-	static async pGetUserLegendaryGroupSearch () {
+	static async pGetUserLegendaryGroupSearch() {
 		await SearchWidget.pLoadCustomIndex({
 			contentIndexName: "entity_LegendaryGroups",
 			errorName: "legendary groups",
@@ -2247,7 +2252,7 @@ class SearchWidget {
 		);
 	}
 
-	static async pGetUserFeatSearch () {
+	static async pGetUserFeatSearch() {
 		// FIXME convert to be more like spell/creature search instead of running custom indexes
 		await SearchWidget.pLoadCustomIndex({
 			contentIndexName: "entity_Feats",
@@ -2276,7 +2281,7 @@ class SearchWidget {
 		);
 	}
 
-	static async pGetUserBackgroundSearch () {
+	static async pGetUserBackgroundSearch() {
 		// FIXME convert to be more like spell/creature search instead of running custom indexes
 		await SearchWidget.pLoadCustomIndex({
 			contentIndexName: "entity_Backgrounds",
@@ -2305,7 +2310,7 @@ class SearchWidget {
 		);
 	}
 
-	static async pGetUserRaceSearch () {
+	static async pGetUserRaceSearch() {
 		// FIXME convert to be more like spell/creature search instead of running custom indexes
 		const dataSource = () => {
 			return DataUtil.race.loadJSON();
@@ -2337,7 +2342,7 @@ class SearchWidget {
 		);
 	}
 
-	static async pGetUserOptionalFeatureSearch () {
+	static async pGetUserOptionalFeatureSearch() {
 		// FIXME convert to be more like spell/creature search instead of running custom indexes
 		await SearchWidget.pLoadCustomIndex({
 			contentIndexName: "entity_OptionalFeatures",
@@ -2366,7 +2371,7 @@ class SearchWidget {
 		);
 	}
 
-	static async pGetUserAdventureSearch (opts) {
+	static async pGetUserAdventureSearch(opts) {
 		await SearchWidget.pLoadCustomIndex({
 			contentIndexName: "entity_Adventures",
 			errorName: "adventures",
@@ -2382,7 +2387,7 @@ class SearchWidget {
 		return SearchWidget.pGetUserEntitySearch("Select Adventure", "entity_Adventures", opts);
 	}
 
-	static async pGetUserBookSearch (opts) {
+	static async pGetUserBookSearch(opts) {
 		await SearchWidget.pLoadCustomIndex({
 			contentIndexName: "entity_Books",
 			errorName: "books",
@@ -2398,7 +2403,7 @@ class SearchWidget {
 		return SearchWidget.pGetUserEntitySearch("Select Book", "entity_Books", opts);
 	}
 
-	static async pGetUserAdventureBookSearch (opts) {
+	static async pGetUserAdventureBookSearch(opts) {
 		const contentIndexName = opts.contentIndexName || "entity_AdventuresBooks";
 		await SearchWidget.pLoadCustomIndex({
 			contentIndexName,
@@ -2423,7 +2428,7 @@ class SearchWidget {
 		return SearchWidget.pGetUserEntitySearch("Select Adventure or Book", contentIndexName, opts);
 	}
 
-	static async pGetUserCreatureSearch () {
+	static async pGetUserCreatureSearch() {
 		await SearchWidget.P_LOADING_CONTENT;
 
 		const nxtOpts = {
@@ -2442,7 +2447,7 @@ class SearchWidget {
 		);
 	}
 
-	static async __pLoadItemIndex (isBasicIndex) {
+	static async __pLoadItemIndex(isBasicIndex) {
 		const dataSource = async () => {
 			const allItems = (await Renderer.item.pBuildList()).filter(it => !it._isItemGroup);
 			return {
@@ -2470,7 +2475,7 @@ class SearchWidget {
 		});
 	}
 
-	static async __pGetUserItemSearch (isBasicIndex) {
+	static async __pGetUserItemSearch(isBasicIndex) {
 		const indexName = isBasicIndex == null ? "entity_Items" : isBasicIndex ? "entity_ItemsBasic" : "entity_ItemsMagic";
 		return SearchWidget.pGetUserEntitySearch(
 			"Select Item",
@@ -2486,17 +2491,17 @@ class SearchWidget {
 		);
 	}
 
-	static async pGetUserBasicItemSearch () {
+	static async pGetUserBasicItemSearch() {
 		await SearchWidget.__pLoadItemIndex(true);
 		return SearchWidget.__pGetUserItemSearch(true);
 	}
 
-	static async pGetUserMagicItemSearch () {
+	static async pGetUserMagicItemSearch() {
 		await SearchWidget.__pLoadItemIndex(false);
 		return SearchWidget.__pGetUserItemSearch(false);
 	}
 
-	static async pGetUserItemSearch () {
+	static async pGetUserItemSearch() {
 		await SearchWidget.__pLoadItemIndex();
 		return SearchWidget.__pGetUserItemSearch();
 	}
@@ -2510,23 +2515,23 @@ class SearchWidget {
 	 * @param [opts.fnFilterResults]
 	 * @param [opts.fnTransform]
 	 */
-	static async pGetUserEntitySearch (title, indexName, opts) {
+	static async pGetUserEntitySearch(title, indexName, opts) {
 		opts = opts || {};
 
 		return new Promise(resolve => {
-			const searchOpts = {defaultCategory: indexName};
+			const searchOpts = { defaultCategory: indexName };
 			if (opts.fnFilterResults) searchOpts.fnFilterResults = opts.fnFilterResults;
 			if (opts.fnTransform) searchOpts.fnTransform = opts.fnTransform;
 
 			const searchWidget = new SearchWidget(
-				{[indexName]: SearchWidget.CONTENT_INDICES[indexName]},
+				{ [indexName]: SearchWidget.CONTENT_INDICES[indexName] },
 				(docOrTransformed) => {
 					doClose(false); // "cancel" close
 					resolve(docOrTransformed);
 				},
 				searchOpts,
 			);
-			const {eleModalInner, doClose} = UiUtil.getShowModal({
+			const { eleModalInner, doClose } = UiUtil.getShowModal({
 				title,
 				cbClose: (doResolve) => {
 					searchWidget.getWrpSearch().detach();
@@ -2540,7 +2545,7 @@ class SearchWidget {
 
 	// region custom search indexes
 	static CustomIndexSubSpec = class {
-		constructor ({dataSource, prop, catId, page, pFnGetDocExtras}) {
+		constructor({ dataSource, prop, catId, page, pFnGetDocExtras }) {
 			this.dataSource = dataSource;
 			this.prop = prop;
 			this.catId = catId;
@@ -2549,7 +2554,7 @@ class SearchWidget {
 		}
 	};
 
-	static async pLoadCustomIndex ({contentIndexName, customIndexSubSpecs, errorName}) {
+	static async pLoadCustomIndex({ contentIndexName, customIndexSubSpecs, errorName }) {
 		if (SearchWidget.P_LOADING_INDICES[contentIndexName]) await SearchWidget.P_LOADING_INDICES[contentIndexName];
 		else {
 			const doClose = SearchWidget._showLoadingModal();
@@ -2558,7 +2563,7 @@ class SearchWidget {
 				SearchWidget.P_LOADING_INDICES[contentIndexName] = (SearchWidget.CONTENT_INDICES[contentIndexName] = await SearchWidget._pGetIndex(customIndexSubSpecs));
 				SearchWidget.P_LOADING_INDICES[contentIndexName] = null;
 			} catch (e) {
-				JqueryUtil.doToast({type: "danger", content: `Could not load ${errorName}! ${VeCt.STR_SEE_CONSOLE}`});
+				JqueryUtil.doToast({ type: "danger", content: `Could not load ${errorName}! ${VeCt.STR_SEE_CONSOLE}` });
 				throw e;
 			} finally {
 				doClose();
@@ -2566,7 +2571,7 @@ class SearchWidget {
 		}
 	}
 
-	static async _pGetIndex (customIndexSubSpecs) {
+	static async _pGetIndex(customIndexSubSpecs) {
 		const index = elasticlunr(function () {
 			this.use(lunr.zh);
 			this.addField("n");
@@ -2605,7 +2610,7 @@ class SearchWidget {
 						dP: SourceUtil.isPartneredSourceWotc(src) ? 1 : 0,
 						dR: ent.reprintedAs || ent.isReprinted ? 1 : 0,
 					};
-					if (subSpec.pFnGetDocExtras) Object.assign(doc, await subSpec.pFnGetDocExtras({ent, doc, subSpec}));
+					if (subSpec.pFnGetDocExtras) Object.assign(doc, await subSpec.pFnGetDocExtras({ ent, doc, subSpec }));
 					index.addDoc(doc);
 				});
 		}
@@ -2613,8 +2618,8 @@ class SearchWidget {
 		return index;
 	}
 
-	static _showLoadingModal () {
-		const {eleModalInner, doClose} = UiUtil.getShowModal({isPermanent: true});
+	static _showLoadingModal() {
+		const { eleModalInner, doClose } = UiUtil.getShowModal({ isPermanent: true });
 		ee`<div class="ve-flex-vh-center ve-w-100 ve-h-100"><span class="ve-dnd-font ve-italic ve-muted">加载中...</span></div>`.appendTo(eleModalInner);
 		return doClose;
 	}
@@ -2625,20 +2630,20 @@ SearchWidget.CONTENT_INDICES = {};
 SearchWidget.P_LOADING_INDICES = {};
 
 class InputUiUtil {
-	static async _pGetShowModal (getShowModalOpts) {
+	static async _pGetShowModal(getShowModalOpts) {
 		return UiUtil.getShowModal(getShowModalOpts);
 	}
 
-	static _getBtnOk ({comp = null, opts, doClose}) {
+	static _getBtnOk({ comp = null, opts, doClose }) {
 		return ee`<button class="ve-btn ve-btn-primary ve-mr-2">${opts.buttonText || "OK"}</button>`
 			.onn("click", evt => {
 				evt.stopPropagation();
-				if (comp && !comp._state.isValid) return JqueryUtil.doToast({content: `请确认输入有效！`, type: "warning"});
+				if (comp && !comp._state.isValid) return JqueryUtil.doToast({ content: `请确认输入有效！`, type: "warning" });
 				doClose(true);
 			});
 	}
 
-	static _getBtnCancel ({comp = null, opts, doClose}) {
+	static _getBtnCancel({ comp = null, opts, doClose }) {
 		return ee`<button class="ve-btn ve-btn-default">取消</button>`
 			.onn("click", evt => {
 				evt.stopPropagation();
@@ -2646,7 +2651,7 @@ class InputUiUtil {
 			});
 	}
 
-	static _getBtnSkip ({comp = null, opts, doClose}) {
+	static _getBtnSkip({ comp = null, opts, doClose }) {
 		return !opts.isSkippable ? null : ee`<button class="ve-btn ve-btn-default ve-ml-3">跳过</button>`
 			.onn("click", evt => {
 				evt.stopPropagation();
@@ -2657,7 +2662,7 @@ class InputUiUtil {
 	/* -------------------------------------------- */
 
 	static GenericButtonInfo = class {
-		constructor (
+		constructor(
 			{
 				text,
 				clazzIcon,
@@ -2675,9 +2680,9 @@ class InputUiUtil {
 			this._value = value;
 		}
 
-		get isPrimary () { return !!this._isPrimary; }
+		get isPrimary() { return !!this._isPrimary; }
 
-		getBtn ({doClose, fnRemember, isGlobal, storageKey}) {
+		getBtn({ doClose, fnRemember, isGlobal, storageKey }) {
 			if (this._isRemember && !storageKey && !fnRemember) throw new Error(`No "storageKey" or "fnRemember" provided for button with saveable value!`);
 
 			return ee`<button class="ve-btn ${this._isPrimary ? "ve-btn-primary" : "ve-btn-default"} ${this._isSmall ? "ve-btn-sm" : ""} ve-flex-v-center ve-mr-3">
@@ -2700,7 +2705,7 @@ class InputUiUtil {
 		}
 	};
 
-	static async pGetUserGenericButton (
+	static async pGetUserGenericButton(
 		{
 			title,
 			buttons,
@@ -2719,12 +2724,12 @@ class InputUiUtil {
 			if (prev != null) return prev;
 		}
 
-		const {eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal} = await InputUiUtil._pGetShowModal({
+		const { eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal } = await InputUiUtil._pGetShowModal({
 			title: title || "Choose",
 			isMinHeight0: true,
 		});
 
-		const btns = buttons.map(btnInfo => btnInfo.getBtn({doClose, fnRemember, isGlobal, storageKey}));
+		const btns = buttons.map(btnInfo => btnInfo.getBtn({ doClose, fnRemember, isGlobal, storageKey }));
 
 		const btnSkip = !isSkippable
 			? null
@@ -2772,7 +2777,7 @@ class InputUiUtil {
 	 * @param [isIgnoreRemembered] If the remembered value should be ignored, in favour of re-prompting the user.
 	 * @return {Promise} A promise which resolves to true/false if the user chose, or null otherwise.
 	 */
-	static async pGetUserBoolean (
+	static async pGetUserBoolean(
 		{
 			title,
 			textYesRemember,
@@ -2855,7 +2860,7 @@ class InputUiUtil {
 	 * @param [opts.isGlobal_default] If the "default" storage key is global (rather than page-specific).
 	 * @return {Promise<number>} A promise which resolves to the number if the user entered one, or null otherwise.
 	 */
-	static async pGetUserNumber (opts) {
+	static async pGetUserNumber(opts) {
 		opts = opts || {};
 
 		let defaultVal = opts.default !== undefined ? opts.default : null;
@@ -2876,14 +2881,14 @@ class InputUiUtil {
 			});
 		if (defaultVal !== undefined) iptNumber.val(defaultVal);
 
-		const {eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal} = await InputUiUtil._pGetShowModal({
+		const { eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal } = await InputUiUtil._pGetShowModal({
 			title: opts.title || "Enter a Number",
 			isMinHeight0: true,
 		});
 
-		const btnOk = this._getBtnOk({opts, doClose});
-		const btnCancel = this._getBtnCancel({opts, doClose});
-		const btnSkip = this._getBtnSkip({opts, doClose});
+		const btnOk = this._getBtnOk({ opts, doClose });
+		const btnCancel = this._getBtnCancel({ opts, doClose });
+		const btnSkip = this._getBtnSkip({ opts, doClose });
 
 		if (opts.elePre) eleModalInner.appends(opts.elePre);
 		eleModalInner.appends(iptNumber);
@@ -2932,7 +2937,7 @@ class InputUiUtil {
 	 * @param [opts.isSkippable] If the prompt is skippable.
 	 * @return {Promise} A promise which resolves to the index of the item the user selected (or an object if fnGetExtraState is passed), or null otherwise.
 	 */
-	static async pGetUserEnum (opts) {
+	static async pGetUserEnum(opts) {
 		opts = opts || {};
 
 		const selEnum = ee`<select class="ve-form-control ve-mb-2"><option value="-1" disabled>${opts.placeholder || "Select..."}</option></select>`
@@ -2954,14 +2959,14 @@ class InputUiUtil {
 			} else selEnum.val(`${opts.default}`);
 		} else selEnum.selectedIndex = 0;
 
-		const {eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal} = await InputUiUtil._pGetShowModal({
+		const { eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal } = await InputUiUtil._pGetShowModal({
 			title: opts.title || "Select an Option",
 			isMinHeight0: true,
 		});
 
-		const btnOk = this._getBtnOk({opts, doClose});
-		const btnCancel = this._getBtnCancel({opts, doClose});
-		const btnSkip = this._getBtnSkip({opts, doClose});
+		const btnOk = this._getBtnOk({ opts, doClose });
+		const btnCancel = this._getBtnCancel({ opts, doClose });
+		const btnSkip = this._getBtnSkip({ opts, doClose });
 
 		selEnum.appendTo(eleModalInner);
 		if (opts.elePost) opts.elePost.appendTo(eleModalInner);
@@ -2979,7 +2984,7 @@ class InputUiUtil {
 		const ix = Number(selEnum.val());
 		if (!~ix) return null;
 		if (opts.fnGetExtraState) {
-			const out = {extraState: opts.fnGetExtraState()};
+			const out = { extraState: opts.fnGetExtraState() };
 			if (opts.isResolveItem) out.item = opts.values[ix];
 			else out.ix = ix;
 			return out;
@@ -3008,7 +3013,7 @@ class InputUiUtil {
 	 * @param [opts.fnGetSearchText] Function which takes a value and returns search text.
 	 * @return {Promise} A promise which resolves to the indices of the items the user selected, or null otherwise.
 	 */
-	static async pGetUserMultipleChoice (opts) {
+	static async pGetUserMultipleChoice(opts) {
 		const prop = "formData";
 
 		const initialState = {};
@@ -3030,19 +3035,19 @@ class InputUiUtil {
 			else title = `Choose At Most ${Parser.numberToText(opts.max).uppercaseFirst()}`;
 		}
 
-		const {ele: wrpList, iptSearch, propIsAcceptable} = ComponentUiUtil.getMetaWrpMultipleChoice(comp, prop, opts);
+		const { ele: wrpList, iptSearch, propIsAcceptable } = ComponentUiUtil.getMetaWrpMultipleChoice(comp, prop, opts);
 		wrpList.addClass("ve-mb-1");
 
-		const {eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal} = await InputUiUtil._pGetShowModal({
+		const { eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal } = await InputUiUtil._pGetShowModal({
 			...(opts.modalOpts || {}),
 			title,
 			isMinHeight0: true,
 			isUncappedHeight: true,
 		});
 
-		const btnOk = this._getBtnOk({opts, doClose});
-		const btnCancel = this._getBtnCancel({opts, doClose});
-		const btnSkip = this._getBtnSkip({opts, doClose});
+		const btnOk = this._getBtnOk({ opts, doClose });
+		const btnCancel = this._getBtnCancel({ opts, doClose });
+		const btnSkip = this._getBtnSkip({ opts, doClose });
 
 		const hkIsAcceptable = () => btnOk.attr("disabled", !comp._state[propIsAcceptable]);
 		comp._addHookBase(propIsAcceptable, hkIsAcceptable);
@@ -3094,13 +3099,13 @@ class InputUiUtil {
 	 * @param [opts.isSkippable] If the prompt is skippable.
 	 * @return {Promise<number>} A promise which resolves to the index of the item the user selected, or null otherwise.
 	 */
-	static async pGetUserIcon (opts) {
+	static async pGetUserIcon(opts) {
 		opts = opts || {};
 
 		let lastIx = opts.default != null ? opts.default : -1;
 		const onclicks = [];
 
-		const {eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal} = await InputUiUtil._pGetShowModal({
+		const { eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal } = await InputUiUtil._pGetShowModal({
 			title: opts.title || "Select an Option",
 			isMinHeight0: true,
 		});
@@ -3134,9 +3139,9 @@ class InputUiUtil {
 			return btn;
 		})}</div>`.appendTo(eleModalInner);
 
-		const btnOk = this._getBtnOk({opts, doClose});
-		const btnCancel = this._getBtnCancel({opts, doClose});
-		const btnSkip = this._getBtnSkip({opts, doClose});
+		const btnOk = this._getBtnOk({ opts, doClose });
+		const btnCancel = this._getBtnCancel({ opts, doClose });
+		const btnSkip = this._getBtnSkip({ opts, doClose });
 
 		ee`<div class="ve-flex-v-center ve-flex-h-right ve-pb-1 ve-px-1">${btnOk}${btnCancel}${btnSkip}</div>`.appendTo(eleModalInner);
 
@@ -3165,7 +3170,7 @@ class InputUiUtil {
 	 * @param [opts.cbPostRender] Callback to call after rendering the modal
 	 * @return {Promise<String>} A promise which resolves to the string if the user entered one, or null otherwise.
 	 */
-	static async pGetUserString (opts) {
+	static async pGetUserString(opts) {
 		opts = opts || {};
 
 		const propValue = "text";
@@ -3203,15 +3208,15 @@ class InputUiUtil {
 			hkIsValid();
 		}
 
-		const {eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal} = await InputUiUtil._pGetShowModal({
+		const { eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal } = await InputUiUtil._pGetShowModal({
 			title: opts.title || "Enter Text",
 			isMinHeight0: true,
 			isWidth100: true,
 		});
 
-		const btnOk = this._getBtnOk({comp, opts, doClose});
-		const btnCancel = this._getBtnCancel({comp, opts, doClose});
-		const btnSkip = this._getBtnSkip({comp, opts, doClose});
+		const btnOk = this._getBtnOk({ comp, opts, doClose });
+		const btnCancel = this._getBtnCancel({ comp, opts, doClose });
+		const btnSkip = this._getBtnSkip({ comp, opts, doClose });
 
 		if (opts.elePre) opts.elePre.appendTo(eleModalInner);
 		if (opts.eleDescription) ee`<div class="ve-flex ve-w-100 ve-mb-1">${opts.eleDescription}</div>`.appendTo(eleModalInner);
@@ -3253,21 +3258,21 @@ class InputUiUtil {
 	 * @param [opts.isSkippable] If the prompt is skippable.
 	 * @return {Promise<String>} A promise which resolves to the string if the user entered one, or null otherwise.
 	 */
-	static async pGetUserText (opts) {
+	static async pGetUserText(opts) {
 		opts = opts || {};
 
 		const iptStr = ee`<textarea class="ve-form-control ve-mb-2 ve-resize-vertical ve-w-100" ${opts.disabled ? "disabled" : ""}></textarea>`
 			.val(opts.default);
 		if (opts.isCode) iptStr.addClass("ve-code");
 
-		const {eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal} = await InputUiUtil._pGetShowModal({
+		const { eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal } = await InputUiUtil._pGetShowModal({
 			title: opts.title || "Enter Text",
 			isMinHeight0: true,
 		});
 
-		const btnOk = this._getBtnOk({opts, doClose});
-		const btnCancel = this._getBtnCancel({opts, doClose});
-		const btnSkip = this._getBtnSkip({opts, doClose});
+		const btnOk = this._getBtnOk({ opts, doClose });
+		const btnCancel = this._getBtnCancel({ opts, doClose });
+		const btnSkip = this._getBtnSkip({ opts, doClose });
 
 		iptStr.appendTo(eleModalInner);
 		ee`<div class="ve-flex-v-center ve-flex-h-right ve-pb-1 ve-px-1">${btnOk}${btnCancel}${btnSkip}</div>`.appendTo(eleModalInner);
@@ -3295,19 +3300,19 @@ class InputUiUtil {
 	 * @param [opts.isSkippable] If the prompt is skippable.
 	 * @return {Promise<String>} A promise which resolves to the color if the user entered one, or null otherwise.
 	 */
-	static async pGetUserColor (opts) {
+	static async pGetUserColor(opts) {
 		opts = opts || {};
 
 		const iptRgb = ee`<input class="ve-form-control ve-mb-2" ${opts.default != null ? `value="${opts.default}"` : ""} type="color">`;
 
-		const {eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal} = await InputUiUtil._pGetShowModal({
+		const { eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal } = await InputUiUtil._pGetShowModal({
 			title: opts.title || "Choose Color",
 			isMinHeight0: true,
 		});
 
-		const btnOk = this._getBtnOk({opts, doClose});
-		const btnCancel = this._getBtnCancel({opts, doClose});
-		const btnSkip = this._getBtnSkip({opts, doClose});
+		const btnOk = this._getBtnOk({ opts, doClose });
+		const btnCancel = this._getBtnCancel({ opts, doClose });
+		const btnSkip = this._getBtnSkip({ opts, doClose });
 
 		iptRgb.appendTo(eleModalInner);
 		ee`<div class="ve-flex-v-center ve-flex-h-right ve-pb-1 ve-px-1">${btnOk}${btnCancel}${btnSkip}</div>`.appendTo(eleModalInner);
@@ -3338,7 +3343,7 @@ class InputUiUtil {
 	 * @param [opts.isSkippable] If the prompt is skippable.
 	 * @returns {Promise<number>} A promise which resolves to the number of degrees if the user pressed "Enter," or null otherwise.
 	 */
-	static async pGetUserDirection (opts) {
+	static async pGetUserDirection(opts) {
 		const X = 0;
 		const Y = 1;
 		const DEG_CIRCLE = 360;
@@ -3347,7 +3352,7 @@ class InputUiUtil {
 		const step = Math.max(2, Math.min(DEG_CIRCLE, opts.step || DEG_CIRCLE));
 		const stepDeg = DEG_CIRCLE / step;
 
-		function getAngle (p1, p2) {
+		function getAngle(p1, p2) {
 			return Math.atan2(p2[Y] - p1[Y], p2[X] - p1[X]) * 180 / Math.PI;
 		}
 
@@ -3355,7 +3360,7 @@ class InputUiUtil {
 		let curAngle = Math.min(DEG_CIRCLE, opts.default) || 0;
 
 		const eleArm = ee`<div class="ve-ui-dir__arm"></div>`;
-		const handleAngle = () => eleArm.css({transform: `rotate(${curAngle + 180}deg)`});
+		const handleAngle = () => eleArm.css({ transform: `rotate(${curAngle + 180}deg)` });
 		handleAngle();
 
 		const elePad = ee`<div class="ve-ui-dir__face">${eleArm}</div>`
@@ -3368,7 +3373,7 @@ class InputUiUtil {
 				handleEvent(evt);
 			});
 
-		const eleDocument = e_({ele: document});
+		const eleDocument = e_({ ele: document });
 
 		const onDocumentMove = evt => {
 			handleEvent(evt);
@@ -3392,7 +3397,7 @@ class InputUiUtil {
 
 			const coords = [EventUtil.getClientX(evt), EventUtil.getClientY(evt)];
 
-			const {top, left} = elePad.getBoundingClientRect().toJSON();
+			const { top, left } = elePad.getBoundingClientRect().toJSON();
 			const center = [left + (elePad.outerWidthe() / 2), top + (elePad.outerHeighte() / 2)];
 			curAngle = getAngle(center, coords) + 90;
 			if (step !== DEG_CIRCLE) curAngle = Math.round(curAngle / stepDeg) * stepDeg;
@@ -3442,14 +3447,14 @@ class InputUiUtil {
 				});
 		})() : null;
 
-		const {eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal} = await InputUiUtil._pGetShowModal({
+		const { eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal } = await InputUiUtil._pGetShowModal({
 			title: opts.title || "Select Direction",
 			isMinHeight0: true,
 		});
 
-		const btnOk = this._getBtnOk({opts, doClose});
-		const btnCancel = this._getBtnCancel({opts, doClose});
-		const btnSkip = this._getBtnSkip({opts, doClose});
+		const btnOk = this._getBtnOk({ opts, doClose });
+		const btnCancel = this._getBtnCancel({ opts, doClose });
+		const btnSkip = this._getBtnSkip({ opts, doClose });
 
 		ee`<div class="ve-flex-vh-center ve-mb-3">
 				${elePadOuter || elePad}
@@ -3484,7 +3489,7 @@ class InputUiUtil {
 	 * @param [opts.isSkippable] If the prompt is skippable.
 	 * @return {Promise<String>} A promise which resolves to a dice string if the user entered values, or null otherwise.
 	 */
-	static async pGetUserDice (opts) {
+	static async pGetUserDice(opts) {
 		opts = opts || {};
 
 		const comp = BaseComponent.fromObject({
@@ -3496,20 +3501,20 @@ class InputUiUtil {
 		comp.render = function (eleParent) {
 			eleParent.empty();
 
-			const iptNum = ComponentUiUtil.getIptInt(this, "num", 0, {ele: ee`<input class="ve-form-control ve-input-xs form-control--minimal ve-text-center ve-mr-1">`})
+			const iptNum = ComponentUiUtil.getIptInt(this, "num", 0, { ele: ee`<input class="ve-form-control ve-input-xs form-control--minimal ve-text-center ve-mr-1">` })
 				.appendTo(eleParent)
 				.onn("keydown", evt => {
 					if (evt.key === "Escape") { iptNum.blure(); return; }
 					if (evt.key === "Enter") doClose(true);
 					evt.stopPropagation();
 				});
-			const selFaces = ComponentUiUtil.getSelEnum(this, "faces", {values: Renderer.dice.DICE})
+			const selFaces = ComponentUiUtil.getSelEnum(this, "faces", { values: Renderer.dice.DICE })
 				.addClass("ve-mr-2")
 				.addClass("ve-text-center")
-				.css({"textAlignLast": "center"});
+				.css({ "textAlignLast": "center" });
 
 			const iptBonus = ee`<input class="ve-form-control ve-input-xs form-control--minimal ve-text-center">`
-				.onn("change", () => this._state.bonus = UiUtil.strToInt(iptBonus.val(), null, {fallbackOnNaN: null}))
+				.onn("change", () => this._state.bonus = UiUtil.strToInt(iptBonus.val(), null, { fallbackOnNaN: null }))
 				.onn("keydown", evt => {
 					if (evt.key === "Escape") { iptBonus.blure(); return; }
 					if (evt.key === "Enter") doClose(true);
@@ -3526,14 +3531,14 @@ class InputUiUtil {
 			return `${this._state.num}d${this._state.faces}${this._state.bonus ? UiUtil.intToBonus(this._state.bonus) : ""}`;
 		};
 
-		const {eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal} = await InputUiUtil._pGetShowModal({
+		const { eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal } = await InputUiUtil._pGetShowModal({
 			title: opts.title || "Enter Dice",
 			isMinHeight0: true,
 		});
 
-		const btnOk = this._getBtnOk({opts, doClose});
-		const btnCancel = this._getBtnCancel({opts, doClose});
-		const btnSkip = this._getBtnSkip({opts, doClose});
+		const btnOk = this._getBtnOk({ opts, doClose });
+		const btnCancel = this._getBtnCancel({ opts, doClose });
+		const btnSkip = this._getBtnSkip({ opts, doClose });
 
 		comp.render(eleModalInner);
 
@@ -3559,12 +3564,12 @@ class InputUiUtil {
 	 * @param [opts.isSkippable] If the prompt is skippable.
 	 * @return {Promise<String>} A promise which resolves to the CR string if the user entered one, or null otherwise.
 	 */
-	static async pGetUserScaleCr (opts = {}) {
+	static async pGetUserScaleCr(opts = {}) {
 		const crDefault = opts.default || "1";
 
 		let slider;
 
-		const {eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal} = await InputUiUtil._pGetShowModal({
+		const { eleModalInner, doClose, pGetResolved, doAutoResize: doAutoResizeModal } = await InputUiUtil._pGetShowModal({
 			title: opts.title || "Select Challenge Rating",
 			isMinHeight0: true,
 			cbClose: () => {
@@ -3589,9 +3594,9 @@ class InputUiUtil {
 		});
 		ee`<div class="ve-flex-col ve-w-640p">${slider.get()}</div>`.appendTo(eleModalInner);
 
-		const btnOk = this._getBtnOk({opts, doClose});
-		const btnCancel = this._getBtnCancel({opts, doClose});
-		const btnSkip = this._getBtnSkip({opts, doClose});
+		const btnOk = this._getBtnOk({ opts, doClose });
+		const btnCancel = this._getBtnCancel({ opts, doClose });
+		const btnSkip = this._getBtnSkip({ opts, doClose });
 
 		ee`<div class="ve-flex-v-center ve-flex-h-right ve-pb-1 ve-px-1">${btnOk}${btnCancel}${btnSkip}</div>`.appendTo(eleModalInner);
 
@@ -3609,11 +3614,12 @@ class InputUiUtil {
 
 	/**
 	 * Always returns an array of files, even in "single" mode.
-	 * @param {?boolean} isMultiple
-	 * @param {?Array<string>} expectedFileTypes
-	 * @param {?string} propVersion
+	 * @param {object} opts
+	 * @param {?boolean} [opts.isMultiple]
+	 * @param {?Array<string>} [opts.expectedFileTypes]
+	 * @param {?string} [opts.propVersion]
 	 */
-	static pGetUserUploadJson (
+	static pGetUserUploadJson(
 		{
 			isMultiple = false,
 			expectedFileTypes = null,
@@ -3657,10 +3663,10 @@ class InputUiUtil {
 								delete json.fileType;
 								delete json[propVersion];
 
-								out.push({name, json});
+								out.push({ name, json });
 							}
 						} catch (e) {
-							errs.push({filename: name, message: e.message});
+							errs.push({ filename: name, message: e.message });
 						}
 
 						if (input.files[readIndex]) {
@@ -3671,7 +3677,7 @@ class InputUiUtil {
 						resolve({
 							files: out,
 							errors: errs,
-							jsons: out.map(({json}) => json),
+							jsons: out.map(({ json }) => json),
 						});
 					};
 
@@ -3694,10 +3700,10 @@ class DragReorderUiUtil {
 	 * @param [opts.getElesChildren] Should return an array as described in the "elesChildren" option.
 	 * @param [opts.fnOnDragComplete] A function to run when dragging is completed.
 	 */
-	static getDragPadOpts (fnGetRow, opts) {
+	static getDragPadOpts(fnGetRow, opts) {
 		if (!opts.eleParent || !opts.swapRowPositions || (!opts.elesChildren && !opts.getElesChildren)) throw new Error("Missing required option(s)!");
 
-		const eleBody = e_({ele: document.body});
+		const eleBody = e_({ ele: document.body });
 
 		const dragMeta = {};
 		const doDragCleanup = () => {
@@ -3720,11 +3726,11 @@ class DragReorderUiUtil {
 
 			eleBody.onn(`mouseup`, dragMeta.fnMouseUpBody);
 
-			const elesChildren = (opts.getElesChildren ? opts.getElesChildren() : opts.elesChildren).map(ele => e_({ele}));
+			const elesChildren = (opts.getElesChildren ? opts.getElesChildren() : opts.elesChildren).map(ele => e_({ ele }));
 			const ixRow = elesChildren.indexOf(fnGetRow());
 
 			elesChildren.forEach((child, i) => {
-				const dimensions = {w: child.outerWidthe(), h: child.outerHeighte()};
+				const dimensions = { w: child.outerWidthe(), h: child.outerHeighte() };
 				const eleDummy = ee`<div class="ve-no-shrink ${i === ixRow ? "ve-ui-drag__wrp-drag-dummy--highlight" : "ve-ui-drag__wrp-drag-dummy--lowlight"}"></div>`
 					.css({
 						width: `${dimensions.w}px`,
@@ -3757,9 +3763,9 @@ class DragReorderUiUtil {
 	 * @param parent Parent component which has a pod decomposable as {swapRowPositions, <elesChildren|getElesChildren>}.
 	 * @return jQuery
 	 */
-	static getDragPad2 (fnGetRow, eleParent, parent) {
-		const {swapRowPositions, elesChildren, getElesChildren} = parent;
-		const nxtOpts = {eleParent, swapRowPositions, elesChildren, getElesChildren};
+	static getDragPad2(fnGetRow, eleParent, parent) {
+		const { swapRowPositions, elesChildren, getElesChildren } = parent;
+		const nxtOpts = { eleParent, swapRowPositions, elesChildren, getElesChildren };
 		return this.getDragPadOpts(fnGetRow, nxtOpts);
 	}
 }
@@ -3768,44 +3774,44 @@ class DragReorderUiUtil {
  * @mixin
  * @param {typeof ProxyBase} Cls
  */
-function MixinBaseComponent (Cls) {
+function MixinBaseComponent(Cls) {
 	class MixedBaseComponent extends Cls {
-		constructor (...args) {
+		constructor(...args) {
 			super(...args);
 
 			this.__locks = {};
 			this.__rendered = {};
 
 			// state
-			this.__state = {...this._getDefaultState()};
+			this.__state = { ...this._getDefaultState() };
 			this._state = this._getProxy("state", this.__state);
 		}
 
-		_addHookBase (prop, hook) {
+		_addHookBase(prop, hook) {
 			return this._addHook("state", prop, hook);
 		}
 
-		_removeHookBase (prop, hook) {
+		_removeHookBase(prop, hook) {
 			return this._removeHook("state", prop, hook);
 		}
 
-		_removeHooksBase (prop) {
+		_removeHooksBase(prop) {
 			return this._removeHooks("state", prop);
 		}
 
-		_addHookAllBase (hook) {
+		_addHookAllBase(hook) {
 			return this._addHookAll("state", hook);
 		}
 
-		_removeHookAllBase (hook) {
+		_removeHookAllBase(hook) {
 			return this._removeHookAll("state", hook);
 		}
 
-		_setState (toState) {
+		_setState(toState) {
 			this._proxyAssign("state", "_state", "__state", toState, true);
 		}
 
-		_setStateValue (prop, value, {isForceTriggerHooks = true} = {}) {
+		_setStateValue(prop, value, { isForceTriggerHooks = true } = {}) {
 			if (this._state[prop] === value && !isForceTriggerHooks) return value;
 			// If the value is new, hooks will be run automatically
 			if (this._state[prop] !== value) return this._state[prop] = value;
@@ -3815,9 +3821,9 @@ function MixinBaseComponent (Cls) {
 			return value;
 		}
 
-		_getState () { return MiscUtil.copyFast(this.__state); }
+		_getState() { return MiscUtil.copyFast(this.__state); }
 
-		getPod () {
+		getPod() {
 			this.__pod = this.__pod || {
 				get: (prop) => this._state[prop],
 				set: (prop, val) => this._state[prop] = val,
@@ -3838,15 +3844,15 @@ function MixinBaseComponent (Cls) {
 		}
 
 		// to be overridden as required
-		_getDefaultState () { return {}; }
+		_getDefaultState() { return {}; }
 
-		getBaseSaveableState () {
+		getBaseSaveableState() {
 			return {
 				state: MiscUtil.copyFast(this.__state),
 			};
 		}
 
-		setBaseSaveableStateFrom (toLoad, isOverwrite = false) {
+		setBaseSaveableStateFrom(toLoad, isOverwrite = false) {
 			toLoad?.state && this._proxyAssignSimple("state", toLoad.state, isOverwrite);
 		}
 
@@ -3855,7 +3861,7 @@ function MixinBaseComponent (Cls) {
 		 * @param opts.prop The state property.
 		 * @param [opts.namespace] The render namespace.
 		 */
-		_getRenderedCollection (opts = null) {
+		_getRenderedCollection(opts = null) {
 			opts = opts || {};
 			const renderedLookupProp = opts.namespace ? `${opts.namespace}.${opts.prop}` : opts.prop;
 			return (this.__rendered[renderedLookupProp] = this.__rendered[renderedLookupProp] || {});
@@ -3873,7 +3879,7 @@ function MixinBaseComponent (Cls) {
 		 * @param [opts.namespace] A namespace to store these renders under. Useful if multiple renders are being made from
 		 *        the same collection.
 		 */
-		_renderCollection (opts) {
+		_renderCollection(opts) {
 			opts = opts || {};
 
 			const rendered = this._getRenderedCollection(opts);
@@ -3881,7 +3887,7 @@ function MixinBaseComponent (Cls) {
 			return this._renderCollection_doRender(rendered, entities, opts);
 		}
 
-		_renderCollection_doRender (rendered, entities, opts) {
+		_renderCollection_doRender(rendered, entities, opts) {
 			opts = opts || {};
 
 			const toDelete = new Set(Object.keys(rendered));
@@ -3955,7 +3961,7 @@ function MixinBaseComponent (Cls) {
 		 * @param [opts.namespace] A namespace to store these renders under. Useful if multiple renders are being made from
 		 *        the same collection.
 		 */
-		async _pRenderCollection (opts) {
+		async _pRenderCollection(opts) {
 			opts = opts || {};
 
 			const rendered = this._getRenderedCollection(opts);
@@ -3963,7 +3969,7 @@ function MixinBaseComponent (Cls) {
 			return this._pRenderCollection_doRender(rendered, entities, opts);
 		}
 
-		async _pRenderCollection_doRender (rendered, entities, opts) {
+		async _pRenderCollection_doRender(rendered, entities, opts) {
 			opts = opts || {};
 
 			const toDelete = new Set(Object.keys(rendered));
@@ -4035,7 +4041,7 @@ function MixinBaseComponent (Cls) {
 		 * @param [namespace] A namespace to store these renders under. Useful if multiple renders are being made from
 		 *        the same collection.
 		 */
-		_detachCollection (prop, namespace = null) {
+		_detachCollection(prop, namespace = null) {
 			const renderedLookupProp = namespace ? `${namespace}.${prop}` : prop;
 			const rendered = (this.__rendered[renderedLookupProp] = this.__rendered[renderedLookupProp] || {});
 			// eslint-disable-next-line vet-jquery/jquery
@@ -4048,7 +4054,7 @@ function MixinBaseComponent (Cls) {
 		 * @param [namespace] A namespace to store these renders under. Useful if multiple renders are being made from
 		 *        the same collection.
 		 */
-		_resetCollectionRenders (prop, namespace = null) {
+		_resetCollectionRenders(prop, namespace = null) {
 			const renderedLookupProp = namespace ? `${namespace}.${prop}` : prop;
 			const rendered = (this.__rendered[renderedLookupProp] = this.__rendered[renderedLookupProp] || {});
 			// eslint-disable-next-line vet-jquery/jquery
@@ -4056,35 +4062,35 @@ function MixinBaseComponent (Cls) {
 			delete this.__rendered[renderedLookupProp];
 		}
 
-		_getCollectionEntityHash (ent) {
+		_getCollectionEntityHash(ent) {
 			// Hashing the stringified JSON relies on the property order remaining consistent, but this is fine
 			return CryptUtil.md5(JSON.stringify(ent));
 		}
 
-		render () { throw new Error("Unimplemented!"); }
+		render() { throw new Error("Unimplemented!"); }
 
 		// to be overridden as required
-		getSaveableState () { return {...this.getBaseSaveableState()}; }
-		setStateFrom (toLoad, isOverwrite = false) { this.setBaseSaveableStateFrom(toLoad, isOverwrite); }
+		getSaveableState() { return { ...this.getBaseSaveableState() }; }
+		setStateFrom(toLoad, isOverwrite = false) { this.setBaseSaveableStateFrom(toLoad, isOverwrite); }
 
-		async _pLock (lockName, {lockToken = null, isDbg = false} = {}) {
-			this.__locks[lockName] ||= new VeLock({name: lockName, isDbg});
-			return this.__locks[lockName].pLock({token: lockToken});
+		async _pLock(lockName, { lockToken = null, isDbg = false } = {}) {
+			this.__locks[lockName] ||= new VeLock({ name: lockName, isDbg });
+			return this.__locks[lockName].pLock({ token: lockToken });
 		}
 
-		async _pGate (lockName) {
+		async _pGate(lockName) {
 			await this._pLock(lockName);
 			this._unlock(lockName);
 		}
 
-		_unlock (lockName) {
+		_unlock(lockName) {
 			if (!this.__locks[lockName]) return;
 			this.__locks[lockName].unlock();
 		}
 
-		async _pDoProxySetBase (prop, value) { return this._pDoProxySet("state", this.__state, prop, value); }
+		async _pDoProxySetBase(prop, value) { return this._pDoProxySet("state", this.__state, prop, value); }
 
-		_triggerCollectionUpdate (prop) {
+		_triggerCollectionUpdate(prop) {
 			if (!this._state[prop]) return;
 			try {
 				this._isDisableEqualsSimpleArrayEmpty = true;
@@ -4094,15 +4100,15 @@ function MixinBaseComponent (Cls) {
 			}
 		}
 
-		static _toCollection (array) {
-			if (array) return array.map(it => ({id: CryptUtil.uid(), entity: it}));
+		static _toCollection(array) {
+			if (array) return array.map(it => ({ id: CryptUtil.uid(), entity: it }));
 		}
 
-		static _fromCollection (array) {
+		static _fromCollection(array) {
 			if (array) return array.map(it => it.entity);
 		}
 
-		static fromObject (obj, ...noModCollections) {
+		static fromObject(obj, ...noModCollections) {
 			const comp = new this();
 			Object.entries(MiscUtil.copyFast(obj)).forEach(([k, v]) => {
 				if (v == null) comp.__state[k] = v;
@@ -4113,9 +4119,9 @@ function MixinBaseComponent (Cls) {
 			return comp;
 		}
 
-		static fromObjectNoMod (obj) { return this.fromObject(obj, "*"); }
+		static fromObjectNoMod(obj) { return this.fromObject(obj, "*"); }
 
-		toObject (...noModCollections) {
+		toObject(...noModCollections) {
 			const cpy = MiscUtil.copyFast(this.__state);
 			Object.entries(cpy).forEach(([k, v]) => {
 				if (v == null) return;
@@ -4126,13 +4132,13 @@ function MixinBaseComponent (Cls) {
 			return cpy;
 		}
 
-		toObjectNoMod () { return this.toObject("*"); }
+		toObjectNoMod() { return this.toObject("*"); }
 	}
 
 	return MixedBaseComponent;
 }
 
-class BaseComponent extends MixinBaseComponent(ProxyBase) {}
+class BaseComponent extends MixinBaseComponent(ProxyBase) { }
 
 globalThis.BaseComponent = BaseComponent;
 
@@ -4145,7 +4151,7 @@ class RenderableCollectionBase {
 	 * @param [opts.namespace]
 	 * @param [opts.isDiffMode]
 	 */
-	constructor (comp, prop, opts) {
+	constructor(comp, prop, opts) {
 		opts = opts || {};
 		this._comp = comp;
 		this._prop = prop;
@@ -4154,24 +4160,24 @@ class RenderableCollectionBase {
 	}
 
 	/** @abstract */
-	getNewRender (entity, i) {
+	getNewRender(entity, i) {
 		throw new Error(`Unimplemented!`);
 	}
 
 	/** @abstract */
-	doUpdateExistingRender (renderedMeta, entity, i) {
+	doUpdateExistingRender(renderedMeta, entity, i) {
 		throw new Error(`Unimplemented!`);
 	}
 
-	doDeleteExistingRender (renderedMeta) {
+	doDeleteExistingRender(renderedMeta) {
 		// No-op
 	}
 
-	doReorderExistingComponent (renderedMeta, entity, i) {
+	doReorderExistingComponent(renderedMeta, entity, i) {
 		// No-op
 	}
 
-	_getCollectionItem (id) {
+	_getCollectionItem(id) {
 		return this._comp._state[this._prop].find(it => it.id === id);
 	}
 
@@ -4179,7 +4185,7 @@ class RenderableCollectionBase {
 	 * @param [opts] Temporary override options.
 	 * @param [opts.isDiffMode]
 	 */
-	render (opts) {
+	render(opts) {
 		opts = opts || {};
 		this._comp._renderCollection({
 			prop: this._prop,
@@ -4196,7 +4202,7 @@ class RenderableCollectionBase {
 globalThis.RenderableCollectionBase = RenderableCollectionBase;
 
 class _RenderableCollectionGenericRowsSyncAsyncUtils {
-	constructor ({comp, prop, wrpRows, namespace}) {
+	constructor({ comp, prop, wrpRows, namespace }) {
 		this._comp = comp;
 		this._prop = prop;
 		this._wrpRows = wrpRows;
@@ -4205,11 +4211,11 @@ class _RenderableCollectionGenericRowsSyncAsyncUtils {
 
 	/* -------------------------------------------- */
 
-	_getCollectionItem (id) {
+	_getCollectionItem(id) {
 		return this._comp._state[this._prop].find(it => it.id === id);
 	}
 
-	getNewRenderComp (entity, i) {
+	getNewRenderComp(entity, i) {
 		const comp = BaseComponent.fromObject(entity.entity, "*");
 		comp._addHookAll("state", () => {
 			this._getCollectionItem(entity.id).entity = comp.toObject("*");
@@ -4218,12 +4224,12 @@ class _RenderableCollectionGenericRowsSyncAsyncUtils {
 		return comp;
 	}
 
-	doUpdateExistingRender (renderedMeta, entity, i) {
+	doUpdateExistingRender(renderedMeta, entity, i) {
 		renderedMeta.comp._proxyAssignSimple("state", entity.entity, true);
 		if (!renderedMeta.wrpRow.parente() === this._wrpRows) renderedMeta.wrpRow.appendTo(this._wrpRows);
 	}
 
-	static _doSwapJqueryElements (eles, ixA, ixB) {
+	static _doSwapJqueryElements(eles, ixA, ixB) {
 		if (ixA === ixB) return;
 
 		if (ixA > ixB) [ixA, ixB] = [ixB, ixA];
@@ -4236,10 +4242,10 @@ class _RenderableCollectionGenericRowsSyncAsyncUtils {
 		eleA.insertAfter(eleB);
 		eleB.insertBeforee(eles[ixA + 1]);
 
-		if (eleActive) e_({ele: eleActive}).focuse();
+		if (eleActive) e_({ ele: eleActive }).focuse();
 	}
 
-	doReorderExistingComponent (renderedMeta, entity, i) {
+	doReorderExistingComponent(renderedMeta, entity, i) {
 		const ix = this._comp._state[this._prop].map(it => it.id).indexOf(entity.id);
 
 		if (!this._wrpRows.contains(renderedMeta.wrpRow)) this._wrpRows.appends(renderedMeta.wrpRow);
@@ -4255,23 +4261,23 @@ class _RenderableCollectionGenericRowsSyncAsyncUtils {
 
 	/* -------------------------------------------- */
 
-	getBtnDelete ({entity, title = "Delete"}) {
+	getBtnDelete({ entity, title = "Delete" }) {
 		return ee`<button class="ve-btn ve-btn-xxs ve-btn-danger" title="${title.qq()}"><span class="glyphicon glyphicon-trash"></span></button>`
-			.onn("click", () => this.doDelete({entity}));
+			.onn("click", () => this.doDelete({ entity }));
 	}
 
-	doDelete ({entity}) {
+	doDelete({ entity }) {
 		this._comp._state[this._prop] = this._comp._state[this._prop].filter(it => it?.id !== entity.id);
 	}
 
-	doDeleteMultiple ({entities}) {
+	doDeleteMultiple({ entities }) {
 		const ids = new Set(entities.map(it => it.id));
 		this._comp._state[this._prop] = this._comp._state[this._prop].filter(it => !ids.has(it?.id));
 	}
 
 	/* -------------------------------------------- */
 
-	getPadDrag ({wrpRow}) {
+	getPadDrag({ wrpRow }) {
 		return DragReorderUiUtil.getDragPadOpts(
 			() => wrpRow,
 			{
@@ -4280,7 +4286,7 @@ class _RenderableCollectionGenericRowsSyncAsyncUtils {
 					this._comp._triggerCollectionUpdate(this._prop);
 				},
 				getElesChildren: () => {
-					const rendered = this._comp._getRenderedCollection({prop: this._prop, namespace: this._namespace});
+					const rendered = this._comp._getRenderedCollection({ prop: this._prop, namespace: this._namespace });
 					return this._comp._state[this._prop]
 						.map(it => rendered[it.id].wrpRow);
 				},
@@ -4300,7 +4306,7 @@ class RenderableCollectionGenericRows extends RenderableCollectionBase {
 	 * @param [opts.namespace]
 	 * @param [opts.isDiffMode]
 	 */
-	constructor (comp, prop, wrpRows, opts) {
+	constructor(comp, prop, wrpRows, opts) {
 		super(comp, prop, opts);
 		this._wrpRows = wrpRows;
 
@@ -4312,21 +4318,21 @@ class RenderableCollectionGenericRows extends RenderableCollectionBase {
 		});
 	}
 
-	doUpdateExistingRender (renderedMeta, entity, i) {
+	doUpdateExistingRender(renderedMeta, entity, i) {
 		return this._utils.doUpdateExistingRender(renderedMeta, entity, i);
 	}
 
-	doReorderExistingComponent (renderedMeta, entity, i) {
+	doReorderExistingComponent(renderedMeta, entity, i) {
 		return this._utils.doReorderExistingComponent(renderedMeta, entity, i);
 	}
 
-	getNewRender (entity, i) {
+	getNewRender(entity, i) {
 		const comp = this._utils.getNewRenderComp(entity, i);
 
 		const wrpRow = this._getWrpRow()
 			.appendTo(this._wrpRows);
 
-		const renderAdditional = this._populateRow({comp, wrpRow, entity});
+		const renderAdditional = this._populateRow({ comp, wrpRow, entity });
 
 		return {
 			...(renderAdditional || {}),
@@ -4336,7 +4342,7 @@ class RenderableCollectionGenericRows extends RenderableCollectionBase {
 		};
 	}
 
-	_getWrpRow () {
+	_getWrpRow() {
 		return ee`<div class="ve-flex-v-center ve-w-100"></div>`;
 	}
 
@@ -4344,7 +4350,7 @@ class RenderableCollectionGenericRows extends RenderableCollectionBase {
 	 * @abstract
 	 * @return {?object}
 	 */
-	_populateRow ({comp, wrpRow, entity}) {
+	_populateRow({ comp, wrpRow, entity }) {
 		throw new Error(`Unimplemented!`);
 	}
 }
@@ -4362,7 +4368,7 @@ class RenderableCollectionAsyncBase {
 	 * @param [opts.isMultiRender]
 	 * @param [opts.additionalCaches]
 	 */
-	constructor (comp, prop, opts) {
+	constructor(comp, prop, opts) {
 		opts = opts || {};
 		this._comp = comp;
 		this._prop = prop;
@@ -4373,20 +4379,20 @@ class RenderableCollectionAsyncBase {
 	}
 
 	/** @abstract */
-	async pGetNewRender (entity, i) {
+	async pGetNewRender(entity, i) {
 		throw new Error(`Unimplemented!`);
 	}
 
 	/** @abstract */
-	async pDoUpdateExistingRender (renderedMeta, entity, i) {
+	async pDoUpdateExistingRender(renderedMeta, entity, i) {
 		throw new Error(`Unimplemented!`);
 	}
 
-	async pDoDeleteExistingRender (renderedMeta) {
+	async pDoDeleteExistingRender(renderedMeta) {
 		// No-op
 	}
 
-	async pDoReorderExistingComponent (renderedMeta, entity, i) {
+	async pDoReorderExistingComponent(renderedMeta, entity, i) {
 		// No-op
 	}
 
@@ -4394,7 +4400,7 @@ class RenderableCollectionAsyncBase {
 	 * @param [opts] Temporary override options.
 	 * @param [opts.isDiffMode]
 	 */
-	async pRender (opts) {
+	async pRender(opts) {
 		opts = opts || {};
 		return this._comp._pRenderCollection({
 			prop: this._prop,
@@ -4421,7 +4427,7 @@ class RenderableCollectionAsyncGenericRows extends RenderableCollectionAsyncBase
 	 * @param [opts.namespace]
 	 * @param [opts.isDiffMode]
 	 */
-	constructor (comp, prop, wrpRows, opts) {
+	constructor(comp, prop, wrpRows, opts) {
 		super(comp, prop, opts);
 		this._wrpRows = wrpRows;
 
@@ -4433,21 +4439,21 @@ class RenderableCollectionAsyncGenericRows extends RenderableCollectionAsyncBase
 		});
 	}
 
-	pDoUpdateExistingRender (renderedMeta, entity, i) {
+	pDoUpdateExistingRender(renderedMeta, entity, i) {
 		return this._utils.doUpdateExistingRender(renderedMeta, entity, i);
 	}
 
-	pDoReorderExistingComponent (renderedMeta, entity, i) {
+	pDoReorderExistingComponent(renderedMeta, entity, i) {
 		return this._utils.doReorderExistingComponent(renderedMeta, entity, i);
 	}
 
-	async pGetNewRender (entity, i) {
+	async pGetNewRender(entity, i) {
 		const comp = this._utils.getNewRenderComp(entity, i);
 
 		const wrpRow = this._getWrpRow()
 			.appendTo(this._wrpRows);
 
-		const renderAdditional = await this._pPopulateRow({comp, wrpRow, entity});
+		const renderAdditional = await this._pPopulateRow({ comp, wrpRow, entity });
 
 		return {
 			...(renderAdditional || {}),
@@ -4457,20 +4463,20 @@ class RenderableCollectionAsyncGenericRows extends RenderableCollectionAsyncBase
 		};
 	}
 
-	_getWrpRow () {
+	_getWrpRow() {
 		return ee`<div class="ve-flex-v-center ve-w-100"></div>`;
 	}
 
 	/**
 	 * @return {?object}
 	 */
-	async _pPopulateRow ({comp, wrpRow, entity}) {
+	async _pPopulateRow({ comp, wrpRow, entity }) {
 		throw new Error(`Unimplemented!`);
 	}
 }
 
 class BaseLayeredComponent extends BaseComponent {
-	constructor () {
+	constructor() {
 		super();
 
 		// layers
@@ -4479,21 +4485,21 @@ class BaseLayeredComponent extends BaseComponent {
 		this._layerMeta = this._getProxy("layerMeta", this.__layerMeta);
 	}
 
-	_addHookDeep (prop, hook) {
+	_addHookDeep(prop, hook) {
 		this._addHookBase(prop, hook);
 		this._addHook("layerMeta", prop, hook);
 	}
 
-	_removeHookDeep (prop, hook) {
+	_removeHookDeep(prop, hook) {
 		this._removeHookBase(prop, hook);
 		this._removeHook("layerMeta", prop, hook);
 	}
 
-	_getBase (prop) {
+	_getBase(prop) {
 		return this._state[prop];
 	}
 
-	_get (prop) {
+	_get(prop) {
 		if (this._layerMeta[prop]) {
 			for (let i = this._layers.length - 1; i >= 0; --i) {
 				const val = this._layers[i].data[prop];
@@ -4504,16 +4510,16 @@ class BaseLayeredComponent extends BaseComponent {
 		return this._state[prop];
 	}
 
-	_addLayer (layer) {
+	_addLayer(layer) {
 		this._layers.push(layer);
 		this._addLayer_addLayerMeta(layer);
 	}
 
-	_addLayer_addLayerMeta (layer) {
+	_addLayer_addLayerMeta(layer) {
 		Object.entries(layer.data).forEach(([k, v]) => this._layerMeta[k] = v != null);
 	}
 
-	_removeLayer (layer) {
+	_removeLayer(layer) {
 		const ix = this._layers.indexOf(layer);
 		if (~ix) {
 			this._layers.splice(ix, 1);
@@ -4524,25 +4530,25 @@ class BaseLayeredComponent extends BaseComponent {
 		}
 	}
 
-	updateLayersActive (prop) {
+	updateLayersActive(prop) {
 		// this uses the fact that updating a proxy value to the same value still triggers hooks
 		//   anything listening to changes in this flag will be forced to recalculate from base + all layers
 		this._layerMeta[prop] = this._layers.some(l => l.data[prop] != null);
 	}
 
-	getBaseSaveableState () {
+	getBaseSaveableState() {
 		return {
 			state: MiscUtil.copyFast(this.__state),
 			layers: MiscUtil.copyFast(this._layers.map(l => l.getSaveableState())),
 		};
 	}
 
-	setBaseSaveableStateFrom (toLoad) {
+	setBaseSaveableStateFrom(toLoad) {
 		toLoad.state && Object.assign(this._state, toLoad.state);
 		if (toLoad.layers) toLoad.layers.forEach(l => this._addLayer(CompLayer.fromSavedState(this, l)));
 	}
 
-	getPod () {
+	getPod() {
 		this.__pod = this.__pod || {
 			...super.getPod(),
 
@@ -4570,7 +4576,7 @@ class BaseLayeredComponent extends BaseComponent {
  *  modifying the underlying component.
  */
 class CompLayer extends ProxyBase {
-	constructor (component, layerName, data) {
+	constructor(component, layerName, data) {
 		super();
 
 		this._name = layerName;
@@ -4581,19 +4587,19 @@ class CompLayer extends ProxyBase {
 		this._addHookAll("data", prop => component.updateLayersActive(prop));
 	}
 
-	getSaveableState () {
+	getSaveableState() {
 		return {
 			name: this._name,
 			data: MiscUtil.copyFast(this.__data),
 		};
 	}
 
-	static fromSavedState (component, savedState) { return new CompLayer(component, savedState.name, savedState.data); }
+	static fromSavedState(component, savedState) { return new CompLayer(component, savedState.name, savedState.data); }
 }
 
-function MixinComponentHistory (Cls) {
+function MixinComponentHistory(Cls) {
 	class MixedComponentHistory extends Cls {
-		constructor () {
+		constructor() {
 			super(...arguments);
 			this._histStackUndo = [];
 			this._histStackRedo = [];
@@ -4604,9 +4610,9 @@ function MixinComponentHistory (Cls) {
 			this._histInitialState = null;
 		}
 
-		set isHistDisabled (val) { this._isHistDisabled = val; }
-		addBlocklistProps (...props) { props.forEach(p => this._histPropBlocklist.add(p)); }
-		addAllowlistProps (...props) {
+		set isHistDisabled(val) { this._isHistDisabled = val; }
+		addBlocklistProps(...props) { props.forEach(p => this._histPropBlocklist.add(p)); }
+		addAllowlistProps(...props) {
 			this._histPropAllowlist = this._histPropAllowlist || new Set();
 			props.forEach(p => this._histPropAllowlist.add(p));
 		}
@@ -4614,7 +4620,7 @@ function MixinComponentHistory (Cls) {
 		/**
 		 * This should be initialised after all other hooks have been added
 		 */
-		initHistory () {
+		initHistory() {
 			// Track the initial state, and watch for further modifications
 			this._histInitialState = MiscUtil.copyFast(this._state);
 			this._isHistDisabled = false;
@@ -4628,7 +4634,7 @@ function MixinComponentHistory (Cls) {
 			});
 		}
 
-		recordHistory () {
+		recordHistory() {
 			const stateCopy = MiscUtil.copyFast(this._state);
 
 			// remove any un-tracked properties
@@ -4639,14 +4645,14 @@ function MixinComponentHistory (Cls) {
 			this._histStackRedo = [];
 		}
 
-		_histAddExcludedProperties (stateCopy) {
+		_histAddExcludedProperties(stateCopy) {
 			Object.entries(this._state).forEach(([k, v]) => {
 				if (this._histPropBlocklist.has(k)) return stateCopy[k] = v;
 				if (this._histPropAllowlist && !this._histPropAllowlist.has(k)) stateCopy[k] = v;
 			});
 		}
 
-		undo () {
+		undo() {
 			if (this._histStackUndo.length) {
 				const lastHistDisabled = this._isHistDisabled;
 				this._isHistDisabled = true;
@@ -4670,7 +4676,7 @@ function MixinComponentHistory (Cls) {
 			}
 		}
 
-		redo () {
+		redo() {
 			if (!this._histStackRedo.length) return;
 
 			const lastHistDisabled = this._isHistDisabled;
@@ -4689,9 +4695,9 @@ function MixinComponentHistory (Cls) {
 }
 
 // region Globally-linked state components
-function MixinComponentGlobalState (Cls) {
+function MixinComponentGlobalState(Cls) {
 	class MixedComponentGlobalState extends Cls {
-		constructor (...args) {
+		constructor(...args) {
 			super(...args);
 
 			// Point our proxy at the singleton `__stateGlobal` object
@@ -4706,9 +4712,9 @@ function MixinComponentGlobalState (Cls) {
 				});
 		}
 
-		get __stateGlobal () { return MixinComponentGlobalState._Singleton.__stateGlobal; }
+		get __stateGlobal() { return MixinComponentGlobalState._Singleton.__stateGlobal; }
 
-		_addHookGlobal (prop, hook) {
+		_addHookGlobal(prop, hook) {
 			return this._addHook("stateGlobal", prop, hook);
 		}
 	}
@@ -4716,39 +4722,39 @@ function MixinComponentGlobalState (Cls) {
 }
 
 MixinComponentGlobalState._Singleton = class {
-	static async _pSaveState () {
+	static async _pSaveState() {
 		return StorageUtil.pSet(VeCt.STORAGE_GLOBAL_COMPONENT_STATE, MiscUtil.copyFast(MixinComponentGlobalState._Singleton.__stateGlobal));
 	}
 
-	static async _pLoadState () {
+	static async _pLoadState() {
 		if (MixinComponentGlobalState._Singleton._pLoadingState) return MixinComponentGlobalState._Singleton._pLoadingState;
 		return MixinComponentGlobalState._Singleton._pLoadingState = MixinComponentGlobalState._Singleton._pLoadState_();
 	}
 
-	static async _pLoadState_ () {
+	static async _pLoadState_() {
 		Object.assign(MixinComponentGlobalState._Singleton.__stateGlobal, (await StorageUtil.pGet(VeCt.STORAGE_GLOBAL_COMPONENT_STATE)) || {});
 	}
 
-	static _getDefaultStateGlobal () {
+	static _getDefaultStateGlobal() {
 		return {
 			isUseSpellPoints: false,
 		};
 	}
 };
-MixinComponentGlobalState._Singleton.__stateGlobal = {...MixinComponentGlobalState._Singleton._getDefaultStateGlobal()};
+MixinComponentGlobalState._Singleton.__stateGlobal = { ...MixinComponentGlobalState._Singleton._getDefaultStateGlobal() };
 MixinComponentGlobalState._Singleton._pSaveStateDebounced = MiscUtil.debounce(MixinComponentGlobalState._Singleton._pSaveState.bind(MixinComponentGlobalState._Singleton), 100);
 MixinComponentGlobalState._Singleton._pLoadingState = null;
 
 // endregion
 
 class ComponentUiUtil {
-	static trackHook (hooks, prop, hook) {
+	static trackHook(hooks, prop, hook) {
 		hooks[prop] = hooks[prop] || [];
 		hooks[prop].push(hook);
 	}
 
-	static getDisp (comp, prop, {html, ele, fnGetText} = {}) {
-		ele = (ele || e_({outer: html || `<div></div>`}));
+	static getDisp(comp, prop, { html, ele, fnGetText } = {}) {
+		ele = (ele || e_({ outer: html || `<div></div>` }));
 
 		const hk = () => ele.txt(fnGetText ? fnGetText(comp._state[prop]) : comp._state[prop]);
 		comp._addHookBase(prop, hk);
@@ -4776,7 +4782,7 @@ class ComponentUiUtil {
 	 * @param [opts.decorationRight] Decoration to be added to the right-hand-side of the input. Can be `"ticker"` or `"clear"`. REQUIRES `asMeta` TO BE SET.
 	 * @return {HTMLElementExtended}
 	 */
-	static getIptInt (component, prop, fallbackEmpty = 0, opts) {
+	static getIptInt(component, prop, fallbackEmpty = 0, opts) {
 		return ComponentUiUtil._getIptNumeric(component, prop, UiUtil.strToInt, fallbackEmpty, opts);
 	}
 
@@ -4798,7 +4804,7 @@ class ComponentUiUtil {
 	 * @param [opts.decorationRight] Decoration to be added to the right-hand-side of the input. Can be `"ticker"` or `"clear"`. REQUIRES `asMeta` TO BE SET.
 	 * @return {HTMLElementExtended}
 	 */
-	static getIptNumber (component, prop, fallbackEmpty = 0, opts) {
+	static getIptNumber(component, prop, fallbackEmpty = 0, opts) {
 		return ComponentUiUtil._getIptNumeric(component, prop, UiUtil.strToNumber, fallbackEmpty, opts);
 	}
 
@@ -4822,8 +4828,8 @@ class ComponentUiUtil {
 	 * @param [opts.decorationRight] Decoration to be added to the right-hand-side of the input. Can be `"ticker"` or `"clear"`. REQUIRES `asMeta` TO BE SET.
 	 * @return {jQuery}
 	 */
-	static $getIptInt (component, prop, fallbackEmpty = 0, opts) {
-		if (opts?.$ele) opts.ele = e_({ele: opts.$ele[0]});
+	static $getIptInt(component, prop, fallbackEmpty = 0, opts) {
+		if (opts?.$ele) opts.ele = e_({ ele: opts.$ele[0] });
 
 		const out = ComponentUiUtil._getIptNumeric(component, prop, UiUtil.strToInt, fallbackEmpty, opts);
 		if (!opts?.asMeta) return globalThis.jQuery(out);
@@ -4854,8 +4860,8 @@ class ComponentUiUtil {
 	 * @param [opts.decorationRight] Decoration to be added to the right-hand-side of the input. Can be `"ticker"` or `"clear"`. REQUIRES `asMeta` TO BE SET.
 	 * @return {jQuery}
 	 */
-	static $getIptNumber (component, prop, fallbackEmpty = 0, opts) {
-		if (opts?.$ele) opts.ele = e_({ele: opts.$ele[0]});
+	static $getIptNumber(component, prop, fallbackEmpty = 0, opts) {
+		if (opts?.$ele) opts.ele = e_({ ele: opts.$ele[0] });
 
 		const out = ComponentUiUtil._getIptNumeric(component, prop, UiUtil.strToNumber, fallbackEmpty, opts);
 		if (!opts?.asMeta) return globalThis.jQuery(out);
@@ -4867,7 +4873,7 @@ class ComponentUiUtil {
 	}
 	/* eslint-enable vet-jquery/jquery */
 
-	static _getIptNumeric (component, prop, fnConvert, fallbackEmpty = 0, opts) {
+	static _getIptNumeric(component, prop, fnConvert, fallbackEmpty = 0, opts) {
 		opts = opts || {};
 		opts.offset = opts.offset || 0;
 
@@ -4881,7 +4887,7 @@ class ComponentUiUtil {
 			ipt.val(val);
 		};
 
-		const ipt = (opts.ele ? e_({ele: opts.ele}) : e_({outer: opts.html || `<input class="ve-form-control ve-input-xs form-control--minimal ve-text-right">`}))
+		const ipt = (opts.ele ? e_({ ele: opts.ele }) : e_({ outer: opts.html || `<input class="ve-form-control ve-input-xs form-control--minimal ve-text-right">` }))
 			.disableSpellcheck()
 			.onn("keydown", evt => { if (evt.key === "Escape") ipt.blur(); })
 			.onn("change", () => {
@@ -4940,13 +4946,13 @@ class ComponentUiUtil {
 	 * @param [opts.decorationRight] Decoration to be added to the right-hand-side of the input. Can be `"search"` or `"clear"`. REQUIRES `asMeta` TO BE SET.
 	 * @param [opts.placeholder] Placeholder for the input.
 	 */
-	static getIptStr (component, prop, opts) {
+	static getIptStr(component, prop, opts) {
 		opts = opts || {};
 
 		// Validate options
 		if ((opts.decorationLeft || opts.decorationRight) && !opts.asMeta) throw new Error(`Input must be created with "asMeta" option`);
 
-		const ipt = (opts.ele ? e_({ele: opts.ele}) : e_({outer: opts.html || `<input class="ve-form-control ve-input-xs form-control--minimal">`}))
+		const ipt = (opts.ele ? e_({ ele: opts.ele }) : e_({ outer: opts.html || `<input class="ve-form-control ve-input-xs form-control--minimal">` }))
 			.onn("keydown", evt => { if (evt.key === "Escape") ipt.blur(); })
 			.disableSpellcheck();
 		UiUtil.bindTypingEnd({
@@ -4989,8 +4995,8 @@ class ComponentUiUtil {
 	 * @param [opts.decorationRight] Decoration to be added to the right-hand-side of the input. Can be `"search"` or `"clear"`. REQUIRES `asMeta` TO BE SET.
 	 * @param [opts.placeholder] Placeholder for the input.
 	 */
-	static $getIptStr (component, prop, opts) {
-		if (opts?.$ele) opts.ele = e_({ele: opts.$ele[0]});
+	static $getIptStr(component, prop, opts) {
+		if (opts?.$ele) opts.ele = e_({ ele: opts.$ele[0] });
 
 		const out = ComponentUiUtil.getIptStr(component, prop, opts);
 		if (!opts?.asMeta) return globalThis.jQuery(out);
@@ -5002,8 +5008,8 @@ class ComponentUiUtil {
 	}
 	/* eslint-enable vet-jquery/jquery */
 
-	static _getIptDecoratedMeta (component, prop, ipt, hook, opts) {
-		const out = {ipt, unhook: () => component._removeHookBase(prop, hook)};
+	static _getIptDecoratedMeta(component, prop, ipt, hook, opts) {
+		const out = { ipt, unhook: () => component._removeHookBase(prop, hook) };
 
 		if (opts.decorationLeft || opts.decorationRight) {
 			let decorLeft;
@@ -5030,7 +5036,7 @@ class ComponentUiUtil {
 		"right": "ve-ui-ideco__wrp--right",
 	};
 
-	static _getEleDecor (component, prop, ipt, decorType, side, opts) {
+	static _getEleDecor(component, prop, ipt, decorType, side, opts) {
 		const classNameSide = this._DECOR_SIDE_TO_CSS_CLASS[side] || "";
 		switch (decorType) {
 			case "search": {
@@ -5095,7 +5101,7 @@ class ComponentUiUtil {
 	 * @param [opts.ele] Element to use.
 	 * @return {HTMLElementExtended}
 	 */
-	static getIptEntries (component, prop, opts) {
+	static getIptEntries(component, prop, opts) {
 		opts = opts || {};
 
 		const ipt = (opts.ele || ee`<textarea class="ve-form-control ve-input-xs form-control--minimal ve-resize-vertical"></textarea>`)
@@ -5115,10 +5121,10 @@ class ComponentUiUtil {
 	 * @param [opts.html] HTML to convert to element to use.
 	 * @return {HTMLElementExtended}
 	 */
-	static getIptColor (component, prop, opts) {
+	static getIptColor(component, prop, opts) {
 		opts = opts || {};
 
-		const ipt = (opts.ele || e_({outer: opts.html || `<input class="ve-form-control ve-input-xs form-control--minimal ve-ui__ipt-color" type="color">`}))
+		const ipt = (opts.ele || e_({ outer: opts.html || `<input class="ve-form-control ve-input-xs form-control--minimal ve-ui__ipt-color" type="color">` }))
 			.onn("change", () => component._state[prop] = ipt.val());
 		const hook = () => ipt.val(component._state[prop]);
 		component._addHookBase(prop, hook);
@@ -5135,7 +5141,7 @@ class ComponentUiUtil {
 	 * @param [opts.html] HTML to convert to element to use.
 	 * @return {jQuery}
 	 */
-	static $getIptColor (component, prop, opts) {
+	static $getIptColor(component, prop, opts) {
 		const ipt = this.getIptColor(component, prop, opts);
 		return globalThis.jQuery(ipt);
 	}
@@ -5158,17 +5164,17 @@ class ComponentUiUtil {
 	 * @param [opts.inactiveTitle] Title to use when setting the button as "active."
 	 * @return *
 	 */
-	static getBtnBool (component, prop, opts) {
+	static getBtnBool(component, prop, opts) {
 		opts = opts || {};
 
 		let ele = opts.ele;
-		if (opts.html) ele = e_({outer: opts.html});
+		if (opts.html) ele = e_({ outer: opts.html });
 
 		const activeClass = opts.activeClass || "ve-active";
 		const stateName = opts.stateName || "state";
 		const stateProp = opts.stateProp || `_${stateName}`;
 
-		const btn = (ele ? e_({ele}) : e_({
+		const btn = (ele ? e_({ ele }) : e_({
 			ele: ele,
 			tag: "button",
 			clazz: "ve-btn ve-btn-xs ve-btn-default",
@@ -5209,9 +5215,9 @@ class ComponentUiUtil {
 	 * @param [opts.inactiveTitle] Title to use when setting the button as "active."
 	 * @return {jQuery}
 	 */
-	static $getBtnBool (component, prop, opts) {
-		const nxtOpts = {...opts};
-		if (nxtOpts.$ele) nxtOpts.ele = e_({ele: nxtOpts.$ele[0]});
+	static $getBtnBool(component, prop, opts) {
+		const nxtOpts = { ...opts };
+		if (nxtOpts.$ele) nxtOpts.ele = e_({ ele: nxtOpts.$ele[0] });
 		return globalThis.jQuery(this.getBtnBool(component, prop, nxtOpts));
 	}
 	/* eslint-enable vet-jquery/jquery */
@@ -5228,7 +5234,7 @@ class ComponentUiUtil {
 	 * @param [opts.stateProp] State prop.
 	 * @return {(HTMLElementExtended | Object)}
 	 */
-	static getCbBool (component, prop, opts) {
+	static getCbBool(component, prop, opts) {
 		opts = opts || {};
 
 		const stateName = opts.stateName || "state";
@@ -5278,11 +5284,11 @@ class ComponentUiUtil {
 	 * @param [opts.stateProp] State prop.
 	 * @return {(jQuery | Object)}
 	 */
-	static $getCbBool (component, prop, opts) {
+	static $getCbBool(component, prop, opts) {
 		opts ||= {};
 		const out = this.getCbBool(component, prop, opts);
 		if (!opts.asMeta) return globalThis.jQuery(out);
-		return {...out, $cb: globalThis.jQuery(out.cb)};
+		return { ...out, $cb: globalThis.jQuery(out.cb) };
 	}
 	/* eslint-enable vet-jquery/jquery */
 
@@ -5295,7 +5301,7 @@ class ComponentUiUtil {
 			wrpChoices;
 			wrp;
 
-			constructor (
+			constructor(
 				{
 					fnFilter = null,
 				},
@@ -5304,21 +5310,21 @@ class ComponentUiUtil {
 				this._fnFilter = fnFilter;
 			}
 
-			setFnFilter (fnFilter) {
+			setFnFilter(fnFilter) {
 				this._fnFilter = fnFilter;
 			}
 
-			getAvailableOptionMetas () {
+			getAvailableOptionMetas() {
 				return this.optionMetas
 					.filter((optionMeta, ix) => this._fnFilter == null || this._fnFilter(optionMeta.value, ix));
 			}
 
-			getVisibleOptionMetas () {
+			getVisibleOptionMetas() {
 				return this.getAvailableOptionMetas()
 					.filter(optionMeta => optionMeta.isVisible);
 			}
 
-			doHandleSearchTerm (
+			doHandleSearchTerm(
 				{
 					searchTerm,
 				},
@@ -5331,12 +5337,12 @@ class ComponentUiUtil {
 			}
 		};
 
-		static _getSearchString (str) {
+		static _getSearchString(str) {
 			if (str == null) return "";
 			return CleanUtil.getCleanString(str.trim().toLowerCase().replace(/\s+/g, " "));
 		}
 
-		constructor (
+		constructor(
 			{
 				values,
 				fnFilter = null,
@@ -5376,10 +5382,10 @@ class ComponentUiUtil {
 
 			this._handleSearchChangeDebounced = MiscUtil.debounce(this._handleSearchChange.bind(this), 30);
 
-			this._rdState = new this.constructor._RenderState({fnFilter});
+			this._rdState = new this.constructor._RenderState({ fnFilter });
 		}
 
-		setSelected (val) {
+		setSelected(val) {
 			if (val == null) {
 				if (!this._isAllowNull) throw new Error(`"null" is not a valid value! This is a bug!`);
 				this._state.selected = null;
@@ -5391,20 +5397,20 @@ class ComponentUiUtil {
 			this._state.selected = val;
 		}
 
-		addHookSelected (hk) {
+		addHookSelected(hk) {
 			this._addHookBase("selected", hk);
 		}
 
-		getSelected () {
+		getSelected() {
 			return this._state.selected;
 		}
 
-		setFnFilter (fnFilter) {
+		setFnFilter(fnFilter) {
 			this._rdState.setFnFilter(fnFilter);
 			this._state.pulse_fnFilter = !this._state.pulse_fnFilter;
 		}
 
-		setValues (nxtValues, {isResetOnMissing = false} = {}) {
+		setValues(nxtValues, { isResetOnMissing = false } = {}) {
 			this._state.values = nxtValues;
 
 			if (!isResetOnMissing) return;
@@ -5413,7 +5419,7 @@ class ComponentUiUtil {
 			return this._setValues_resetOnMissing_single();
 		}
 
-		_setValues_resetOnMissing_single () {
+		_setValues_resetOnMissing_single() {
 			if (this._state.selected == null) return;
 
 			if (this._state.values.includes(this._state.selected)) return;
@@ -5424,11 +5430,11 @@ class ComponentUiUtil {
 			this._state.selected = availableOptionMetaFirst?.value ?? null;
 		}
 
-		_setValues_resetOnMissing_multi () {
+		_setValues_resetOnMissing_multi() {
 			// TODO(Future) implement as required
 		}
 
-		_render_iptDisplay () {
+		_render_iptDisplay() {
 			const iptDisplay = ee`<input class="ve-form-control ve-input-xs form-control--minimal">`
 				.addClass("ve-ui-sel2__ipt-display")
 				.attr("tabindex", "-1")
@@ -5463,11 +5469,11 @@ class ComponentUiUtil {
 			return iptDisplay;
 		}
 
-		_handleSearchChange () {
+		_handleSearchChange() {
 			this._state.searchTerm = this.constructor._getSearchString(this._rdState.iptSearch.val());
 		}
 
-		_render_iptSearch () {
+		_render_iptSearch() {
 			const iptSearch = ee`<input class="ve-form-control ve-input-xs form-control--minimal">`
 				.addClass("ve-absolute")
 				.addClass("ve-ui-sel2__ipt-search")
@@ -5519,7 +5525,7 @@ class ComponentUiUtil {
 			return iptSearch;
 		}
 
-		_render_wrp ({iptDisplay, iptSearch}) {
+		_render_wrp({ iptDisplay, iptSearch }) {
 			const wrpChoices = ee`<div class="ve-absolute ve-ui-sel2__wrp-options ve-overflow-y-scroll"></div>`;
 
 			const wrp = ee`<div class="ve-flex ve-relative ve-ui-sel2__wrp ve-w-100">
@@ -5535,7 +5541,7 @@ class ComponentUiUtil {
 			};
 		}
 
-		_render_values () {
+		_render_values() {
 			this._addHookBase("values", (prop, values, prevValues) => {
 				if (prop && CollectionUtil.deepEquals(values, prevValues)) return;
 
@@ -5633,15 +5639,15 @@ class ComponentUiUtil {
 			})();
 
 			this._addHookBase("searchTerm", () => {
-				this._rdState.doHandleSearchTerm({searchTerm: this._state.searchTerm});
+				this._rdState.doHandleSearchTerm({ searchTerm: this._state.searchTerm });
 			})();
 
 			this._addHookBase("pulse_fnFilter", () => {
-				this._rdState.doHandleSearchTerm({searchTerm: this._state.searchTerm});
+				this._rdState.doHandleSearchTerm({ searchTerm: this._state.searchTerm });
 			})();
 		}
 
-		_addToSelection (val) {
+		_addToSelection(val) {
 			if (!this._isMultiSelect) {
 				this._state.selected = val;
 			}
@@ -5649,7 +5655,7 @@ class ComponentUiUtil {
 			// TODO(Future) implement as required
 		}
 
-		render () {
+		render() {
 			this._rdState.iptDisplay = this._render_iptDisplay();
 			this._rdState.iptSearch = this._render_iptSearch();
 
@@ -5688,7 +5694,7 @@ class ComponentUiUtil {
 	 * @param [opts.isDisabled] If the selector should be display-only
 	 * @return {HTMLElementExtended}
 	 */
-	static getSelSearchable (
+	static getSelSearchable(
 		comp,
 		prop,
 		{
@@ -5718,7 +5724,7 @@ class ComponentUiUtil {
 
 		selComp.addHookSelected(() => comp._state[prop] = selComp.getSelected());
 
-		const {wrp, iptDisplay, iptSearch} = selComp.render();
+		const { wrp, iptDisplay, iptSearch } = selComp.render();
 
 		return asMeta
 			? ({
@@ -5748,7 +5754,7 @@ class ComponentUiUtil {
 	 * @param [opts.isDisabled] If the selector should be display-only
 	 * @return {jQuery}
 	 */
-	static $getSelSearchable (
+	static $getSelSearchable(
 		comp,
 		prop,
 		{
@@ -5789,7 +5795,7 @@ class ComponentUiUtil {
 	/* -------------------------------------------- */
 
 	// If the new value list doesn't contain our current value, reset our current value
-	static _getSel_setValues_handleResetOnMissing (
+	static _getSel_setValues_handleResetOnMissing(
 		{
 			component,
 			_propProxy,
@@ -5834,7 +5840,7 @@ class ComponentUiUtil {
 	 * @param [opts.propProxy] Proxy prop.
 	 * @param [opts.isSetIndexes] If the index of the selected item should be set as state, rather than the item itself.
 	 */
-	static $getSelEnum (
+	static $getSelEnum(
 		component,
 		prop,
 		{
@@ -5854,7 +5860,7 @@ class ComponentUiUtil {
 			prop,
 			{
 				values,
-				ele: $ele ? e_({ele: $ele[0]}) : null,
+				ele: $ele ? e_({ ele: $ele[0] }) : null,
 				html,
 				isAllowNull,
 				fnDisplay,
@@ -5886,7 +5892,7 @@ class ComponentUiUtil {
 	 * @param [opts.propProxy] Proxy prop.
 	 * @param [opts.isSetIndexes] If the index of the selected item should be set as state, rather than the item itself.
 	 */
-	static getSelEnum (
+	static getSelEnum(
 		component,
 		prop,
 		{
@@ -5906,8 +5912,8 @@ class ComponentUiUtil {
 		let values_;
 
 		const sel = ele
-			|| (html ? e_({outer: html}) : null)
-			|| e_({tag: "select", clazz: "ve-form-control ve-input-xs"});
+			|| (html ? e_({ outer: html }) : null)
+			|| e_({ tag: "select", clazz: "ve-form-control ve-input-xs" });
 
 		sel
 			.onn("change", () => {
@@ -5918,7 +5924,7 @@ class ComponentUiUtil {
 				component[_propProxy][prop] = isSetIndexes ? 0 : values_[0];
 			});
 
-		const setValues = (nxtValues, {isResetOnMissing = false, isForce = false} = {}) => {
+		const setValues = (nxtValues, { isResetOnMissing = false, isForce = false } = {}) => {
 			if (!isForce && CollectionUtil.deepEquals(values_, nxtValues)) return;
 			values_ = nxtValues;
 			sel.empty();
@@ -5976,20 +5982,20 @@ class ComponentUiUtil {
 
 	static _PickerDisplayComponent = class extends BaseComponent {
 		static _RenderState = class {
-			constructor () {
+			constructor() {
 				this._btnsRemove = [];
 			}
 
-			reset (parent) {
+			reset(parent) {
 				parent.empty();
 				this._btnsRemove.splice(0, this._btnsRemove.length);
 			}
 
-			trackBtnRemove (btnRemove) {
+			trackBtnRemove(btnRemove) {
 				this._btnsRemove.push(btnRemove);
 			}
 
-			setIsDisabled (val) {
+			setIsDisabled(val) {
 				val = !!val;
 
 				this._btnsRemove
@@ -5997,7 +6003,7 @@ class ComponentUiUtil {
 			}
 		};
 
-		constructor (
+		constructor(
 			{
 				compParent,
 				propParent,
@@ -6028,7 +6034,7 @@ class ComponentUiUtil {
 			this._rdState = new this.constructor._RenderState();
 		}
 
-		_getSubcompValues ({isIgnoreUnknown = false} = {}) {
+		_getSubcompValues({ isIgnoreUnknown = false } = {}) {
 			const initialValuesArray = [
 				...(this._values || []),
 				...(
@@ -6044,10 +6050,10 @@ class ComponentUiUtil {
 				: this._compParent._state[this._propParent];
 
 			return initialValuesArray
-				.mergeMap(v => ({[v]: this._compParent._state[this._propParent] && initialValsCompWith.includes(v)}));
+				.mergeMap(v => ({ [v]: this._compParent._state[this._propParent] && initialValsCompWith.includes(v) }));
 		}
 
-		init () {
+		init() {
 			this._addHook("meta", "isDisabled", () => {
 				this._rdState.setIsDisabled(this._meta.isDisabled);
 			})();
@@ -6058,27 +6064,27 @@ class ComponentUiUtil {
 			this.render();
 		}
 
-		setIsDisabled (val) {
+		setIsDisabled(val) {
 			val = !!val;
 			this._meta.isDisabled = val;
 		}
 
-		addValue (v) {
+		addValue(v) {
 			if (this._isCaseInsensitive) v = v.toLowerCase();
 			this._state[v] = true;
 		}
 
-		setValues (nxtValues, {isResetOnMissing = false} = {}) {
+		setValues(nxtValues, { isResetOnMissing = false } = {}) {
 			this._values = [
 				...(nxtValues || []),
 			];
 
 			if (!isResetOnMissing) return;
 
-			this._proxyAssignSimple("state", this._getSubcompValues({isIgnoreUnknown: isResetOnMissing}), true);
+			this._proxyAssignSimple("state", this._getSubcompValues({ isIgnoreUnknown: isResetOnMissing }), true);
 		}
 
-		render () {
+		render() {
 			this._rdState.reset(this._wrpPills);
 
 			Object.entries(this._state).forEach(([k, v]) => {
@@ -6102,7 +6108,7 @@ class ComponentUiUtil {
 			});
 		}
 
-		bindParent (
+		bindParent(
 			{
 				elesDisable = null,
 			},
@@ -6120,11 +6126,11 @@ class ComponentUiUtil {
 			const hkParent = () => this._proxyAssignSimple("state", this._getSubcompValues(), true);
 			this._compParent._addHookBase(this._propParent, hkParent);
 
-			return {hkParent};
+			return { hkParent };
 		}
 	};
 
-	static _getPickPillDisplay (
+	static _getPickPillDisplay(
 		{
 			comp,
 			prop,
@@ -6152,7 +6158,7 @@ class ComponentUiUtil {
 			setIsDisabled: pickComp.setIsDisabled.bind(pickComp),
 			addValue: pickComp.addValue.bind(pickComp),
 			bindParent: pickComp.bindParent.bind(pickComp),
-			unbindParent: ({hk}) => {
+			unbindParent: ({ hk }) => {
 				comp._removeHookBase(prop, hk);
 			},
 			setValues: pickComp.setValues.bind(pickComp),
@@ -6171,7 +6177,7 @@ class ComponentUiUtil {
 	 * @param [opts.fnGetTextContextAction] Value display function.
 	 * @param [opts.asMeta] If a meta-object should be returned containing the hook and elements.
 	 */
-	static getPickEnum (comp, prop, opts) {
+	static getPickEnum(comp, prop, opts) {
 		opts = opts || {};
 
 		let values = opts.values;
@@ -6207,7 +6213,7 @@ class ComponentUiUtil {
 
 		const wrp = ee`<div class="ve-flex-v-center ve-w-100 ve-ui-pick__wrp-btns">${btnAdd}${wrpPills}</div>`;
 
-		const {hkParent} = bindParent({comp, prop, elesDisable: [btnAdd]});
+		const { hkParent } = bindParent({ comp, prop, elesDisable: [btnAdd] });
 
 		const setValues = (nxtValues, ...rest) => {
 			setValuesPickDisplay(nxtValues, ...rest);
@@ -6221,7 +6227,7 @@ class ComponentUiUtil {
 
 		return {
 			wrp,
-			unhook: () => unbindParent({comp, prop, hk: hkParent}),
+			unhook: () => unbindParent({ comp, prop, hk: hkParent }),
 			fnToggleDisabled: isDisabled => {
 				setIsDisabled(isDisabled);
 			},
@@ -6239,7 +6245,7 @@ class ComponentUiUtil {
 	 * @param [opts.isCaseInsensitive] If the values should be case insensitive.
 	 * @param [opts.asMeta] If a meta-object should be returned containing the hook and elements.
 	 */
-	static getPickString (comp, prop, opts) {
+	static getPickString(comp, prop, opts) {
 		opts = opts || {};
 
 		const btnAdd = ee`<button class="ve-btn ve-btn-xxs ve-btn-default ve-ui-pick__btn-add ve-flex-vh-center">+</button>`
@@ -6266,13 +6272,13 @@ class ComponentUiUtil {
 
 		const wrp = ee`<div class="ve-flex-v-center ve-w-100">${btnAdd}${wrpPills}</div>`;
 
-		const {hkParent} = bindParent({comp, prop, elesDisable: [btnAdd]});
+		const { hkParent } = bindParent({ comp, prop, elesDisable: [btnAdd] });
 
 		if (!opts.asMeta) return wrp;
 
 		return {
 			wrp,
-			unhook: () => unbindParent({comp, prop, hk: hkParent}),
+			unhook: () => unbindParent({ comp, prop, hk: hkParent }),
 			fnToggleDisabled: isDisabled => {
 				setIsDisabled(isDisabled);
 			},
@@ -6289,7 +6295,7 @@ class ComponentUiUtil {
 	 * @param [opts.isCaseInsensitive] If the values should be case insensitive.
 	 * @param [opts.asMeta] If a meta-object should be returned containing the hook and elements.
 	 */
-	static getPickString2 (
+	static getPickString2(
 		comp,
 		prop,
 		{
@@ -6358,7 +6364,7 @@ class ComponentUiUtil {
 			});
 		}
 
-		const {hkParent} = bindParent({
+		const { hkParent } = bindParent({
 			comp,
 			prop,
 			elesDisable: [
@@ -6371,7 +6377,7 @@ class ComponentUiUtil {
 
 		return {
 			wrp,
-			unhook: () => unbindParent({comp, prop, hk: hkParent}),
+			unhook: () => unbindParent({ comp, prop, hk: hkParent }),
 			fnToggleDisabled: isDisabled => {
 				setIsDisabled(isDisabled);
 			},
@@ -6391,7 +6397,7 @@ class ComponentUiUtil {
 	 * @param [opts.isIndent] If the checkboxes should be indented.
 	 * @return {jQuery}
 	 */
-	static getCbsEnum (component, prop, opts) {
+	static getCbsEnum(component, prop, opts) {
 		opts = opts || {};
 
 		const wrp = ee`<div class="ve-flex-col ve-w-100"></div>`;
@@ -6410,7 +6416,7 @@ class ComponentUiUtil {
 
 			ee`<label class="ve-split-v-center ve-my-1 stripe-odd ${opts.isIndent ? "ve-ml-4" : ""}"><div class="ve-no-wrap ve-flex-v-center">${opts.fnDisplay ? opts.fnDisplay(value) : value}</div>${cb}</label>`.appendTo(wrp);
 
-			return {cb, value};
+			return { cb, value };
 		});
 
 		const hook = () => metas.forEach(meta => meta.cb.prop("checked", component._state[prop] && component._state[prop].includes(meta.value)));
@@ -6445,7 +6451,7 @@ class ComponentUiUtil {
 	 * @param [opts.isSearchable] If a search input should be created.
 	 * @param [opts.fnGetSearchText] Function which takes a value and returns search text.
 	 */
-	static getMetaWrpMultipleChoice (comp, prop, opts) {
+	static getMetaWrpMultipleChoice(comp, prop, opts) {
 		opts = opts || {};
 		this._getMetaWrpMultipleChoice_doValidateOptions(opts);
 
@@ -6464,7 +6470,7 @@ class ComponentUiUtil {
 		const min = opts.min != null ? opts.min - cntRequired : null;
 		const max = opts.max != null ? opts.max - cntRequired : null;
 
-		const valueGroups = opts.valueGroups || [{values: opts.values}];
+		const valueGroups = opts.valueGroups || [{ values: opts.values }];
 
 		let ixValue = 0;
 		valueGroups.forEach((group, i) => {
@@ -6584,7 +6590,7 @@ class ComponentUiUtil {
 
 		let iptSearch;
 		if (opts.isSearchable) {
-			const compSub = BaseComponent.fromObject({search: ""});
+			const compSub = BaseComponent.fromObject({ search: "" });
 			iptSearch = ComponentUiUtil.getIptStr(compSub, "search");
 			const hkSearch = () => {
 				const cleanSearch = compSub._state.search.trim().toLowerCase();
@@ -6611,7 +6617,7 @@ class ComponentUiUtil {
 			propIsAcceptable,
 			propPulse,
 			unhook,
-			cleanup: ({isRetainState = false} = {}) => {
+			cleanup: ({ isRetainState = false } = {}) => {
 				unhook();
 
 				if (isRetainState) return;
@@ -6631,13 +6637,13 @@ class ComponentUiUtil {
 		};
 	}
 
-	static getMetaWrpMultipleChoice_getPropIsAcceptable (prop) { return `${prop}__isAcceptable`; }
-	static getMetaWrpMultipleChoice_getPropPulse (prop) { return `${prop}__pulse`; }
-	static _getMetaWrpMultipleChoice_getPropValuesLength (prop) { return `${prop}__length`; }
-	static getMetaWrpMultipleChoice_getPropIsActive (prop, ixValue) { return `${prop}__isActive_${ixValue}`; }
-	static getMetaWrpMultipleChoice_getPropIsRequired (prop, ixValue) { return `${prop}__isRequired_${ixValue}`; }
+	static getMetaWrpMultipleChoice_getPropIsAcceptable(prop) { return `${prop}__isAcceptable`; }
+	static getMetaWrpMultipleChoice_getPropPulse(prop) { return `${prop}__pulse`; }
+	static _getMetaWrpMultipleChoice_getPropValuesLength(prop) { return `${prop}__length`; }
+	static getMetaWrpMultipleChoice_getPropIsActive(prop, ixValue) { return `${prop}__isActive_${ixValue}`; }
+	static getMetaWrpMultipleChoice_getPropIsRequired(prop, ixValue) { return `${prop}__isRequired_${ixValue}`; }
 
-	static getMetaWrpMultipleChoice_getSelectedIxs (comp, prop) {
+	static getMetaWrpMultipleChoice_getSelectedIxs(comp, prop) {
 		const out = [];
 		const len = comp._state[this._getMetaWrpMultipleChoice_getPropValuesLength(prop)] || 0;
 		for (let i = 0; i < len; ++i) {
@@ -6646,7 +6652,7 @@ class ComponentUiUtil {
 		return out;
 	}
 
-	static getMetaWrpMultipleChoice_getSelectedValues (comp, prop, {values, valueGroups}) {
+	static getMetaWrpMultipleChoice_getSelectedValues(comp, prop, { values, valueGroups }) {
 		const selectedIxs = this.getMetaWrpMultipleChoice_getSelectedIxs(comp, prop);
 		if (values) return selectedIxs.map(ix => values[ix]);
 
@@ -6662,7 +6668,7 @@ class ComponentUiUtil {
 		return out;
 	}
 
-	static _getMetaWrpMultipleChoice_doValidateOptions (opts) {
+	static _getMetaWrpMultipleChoice_doValidateOptions(opts) {
 		if ((Number(!!opts.values) + Number(!!opts.valueGroups)) !== 1) throw new Error(`Exactly one of "values" and "valueGroups" must be specified!`);
 
 		if (opts.count != null && (opts.min != null || opts.max != null)) throw new Error(`Chooser must be either in "count" mode or "min/max" mode!`);
@@ -6682,13 +6688,13 @@ class ComponentUiUtil {
 	 * @param [opts.fnDisplayTooltip]
 	 * @param [opts.sparseValues]
 	 */
-	static getSliderRange (comp, opts) {
+	static getSliderRange(comp, opts) {
 		opts = opts || {};
-		const slider = new ComponentUiUtil.RangeSlider({comp, ...opts});
+		const slider = new ComponentUiUtil.RangeSlider({ comp, ...opts });
 		return slider.get();
 	}
 
-	static getSliderNumber (
+	static getSliderNumber(
 		comp,
 		prop,
 		{
@@ -6709,11 +6715,11 @@ class ComponentUiUtil {
 		const hk = comp._addHookBase(prop, () => slider.val(comp._state[prop]));
 		hk();
 
-		return asMeta ? ({slider, unhook: () => comp._removeHookBase(prop, hk)}) : slider;
+		return asMeta ? ({ slider, unhook: () => comp._removeHookBase(prop, hk) }) : slider;
 	}
 }
 ComponentUiUtil.RangeSlider = class {
-	constructor (
+	constructor(
 		{
 			comp,
 			propMin,
@@ -6762,15 +6768,15 @@ ComponentUiUtil.RangeSlider = class {
 		this._dragMeta = null;
 	}
 
-	get () {
+	get() {
 		this.constructor._init();
 		this.constructor._ALL_SLIDERS.add(this);
 
 		if (this._cacheRendered) return this._cacheRendered;
 
 		// region Top part
-		const dispValueLeft = this._isSingle ? this._getSpcSingleValue() : this._getDispValue({isVisible: true, side: "left"});
-		const dispValueRight = this._getDispValue({isVisible: true, side: "right"});
+		const dispValueLeft = this._isSingle ? this._getSpcSingleValue() : this._getDispValue({ isVisible: true, side: "left" });
+		const dispValueRight = this._getDispValue({ isVisible: true, side: "right" });
 
 		this._dispTrackInner = this._isSingle ? null : e_({
 			tag: "div",
@@ -6831,9 +6837,9 @@ ComponentUiUtil.RangeSlider = class {
 			tag: "div",
 			clazz: "ve-w-100 ve-flex-vh-center ve-ui-slidr__wrp-bottom",
 			children: [
-				this._isSingle ? this._getSpcSingleValue() : this._getDispValue({side: "left"}), // Pad the start
+				this._isSingle ? this._getSpcSingleValue() : this._getDispValue({ side: "left" }), // Pad the start
 				wrpPips,
-				this._getDispValue({side: "right"}), // and the end
+				this._getDispValue({ side: "right" }), // and the end
 			].filter(Boolean),
 		});
 		// endregion
@@ -6841,7 +6847,7 @@ ComponentUiUtil.RangeSlider = class {
 		// region Hooks
 		const hkChangeValue = () => {
 			const curMin = this._compCpy._state[this._propCurMin];
-			const pctMin = this._getLeftPositionPercentage({value: curMin});
+			const pctMin = this._getLeftPositionPercentage({ value: curMin });
 			this._thumbLow.style.left = `calc(${pctMin}% - ${this.constructor._W_THUMB_PX / 2}px)`;
 			const toDisplayLeft = this._fnDisplay ? `${this._fnDisplay(curMin)}`.qq() : curMin;
 			const toDisplayLeftTooltip = this._fnDisplayTooltip ? `${this._fnDisplayTooltip(curMin)}`.qq() : null;
@@ -6855,7 +6861,7 @@ ComponentUiUtil.RangeSlider = class {
 				this._dispTrackInner.style.left = `${pctMin}%`;
 
 				const curMax = this._compCpy._state[this._propCurMax];
-				const pctMax = this._getLeftPositionPercentage({value: curMax});
+				const pctMax = this._getLeftPositionPercentage({ value: curMax });
 				this._dispTrackInner.style.right = `${100 - pctMax}%`;
 				this._thumbHigh.style.left = `calc(${pctMax}% - ${this.constructor._W_THUMB_PX / 2}px)`;
 				dispValueRight
@@ -6890,7 +6896,7 @@ ComponentUiUtil.RangeSlider = class {
 				}
 
 				// Ensure the last pip is always rendered, even if we're reducing pips
-				if (i !== this._compCpy._state[this._propMax]) pips.push(this._getWrpPip({isMajor: true, value: this._compCpy._state[this._propMax]}));
+				if (i !== this._compCpy._state[this._propMax]) pips.push(this._getWrpPip({ isMajor: true, value: this._compCpy._state[this._propMax] }));
 			} else {
 				const len = this._sparseValues.length;
 				this._sparseValues.forEach((val, i) => {
@@ -6930,7 +6936,7 @@ ComponentUiUtil.RangeSlider = class {
 		return this._cacheRendered = wrp;
 	}
 
-	destroy () {
+	destroy() {
 		this.constructor._ALL_SLIDERS.delete(this);
 		if (this._cacheRendered) this._cacheRendered.remove();
 	}
@@ -6940,21 +6946,21 @@ ComponentUiUtil.RangeSlider = class {
 		"right": "ve-ui-slidr__disp-value--right",
 	};
 
-	_getDispValue ({isVisible, side}) {
+	_getDispValue({ isVisible, side }) {
 		return e_({
 			tag: "div",
 			clazz: `ve-overflow-hidden ve-ui-slidr__disp-value ve-no-shrink ve-no-grow ve-no-wrap ve-flex-vh-center ve-bold ve-no-select ${isVisible ? `ve-ui-slidr__disp-value--visible` : ""} ${this.constructor._SLIDER_SIDE_TO_CSS_CLASS[side] || ""}`,
 		});
 	}
 
-	_getSpcSingleValue () {
+	_getSpcSingleValue() {
 		return e_({
 			tag: "div",
 			clazz: `ve-px-2`,
 		});
 	}
 
-	_getThumb () {
+	_getThumb() {
 		const thumb = e_({
 			tag: "div",
 			clazz: "ve-ui-slidr__thumb ve-absolute ve-clickable ve-touch-action-none",
@@ -6964,8 +6970,8 @@ ComponentUiUtil.RangeSlider = class {
 		return thumb;
 	}
 
-	_getWrpPip ({isMajor, value} = {}) {
-		const style = this._getWrpPip_getStyle({value});
+	_getWrpPip({ isMajor, value } = {}) {
+		const style = this._getWrpPip_getStyle({ value });
 
 		const pip = e_({
 			tag: "div",
@@ -6990,11 +6996,11 @@ ComponentUiUtil.RangeSlider = class {
 		});
 	}
 
-	_getWrpPip_getStyle ({value}) {
-		return `left: ${this._getLeftPositionPercentage({value})}%`;
+	_getWrpPip_getStyle({ value }) {
+		return `left: ${this._getLeftPositionPercentage({ value })}%`;
 	}
 
-	_getLeftPositionPercentage ({value}) {
+	_getLeftPositionPercentage({ value }) {
 		if (this._sparseValues) {
 			const ix = this._sparseValues.sort(SortUtil.ascSort).indexOf(value);
 			if (!~ix) throw new Error(`Value "${value}" was not in the list of sparse values!`);
@@ -7016,7 +7022,7 @@ ComponentUiUtil.RangeSlider = class {
 	 * }
 	 * ```
 	 */
-	_getRelativeValue (evt, {trackOriginX, trackWidth}) {
+	_getRelativeValue(evt, { trackOriginX, trackWidth }) {
 		const xEvt = EventUtil.getClientX(evt) - trackOriginX;
 
 		if (this._sparseValues) {
@@ -7035,30 +7041,30 @@ ComponentUiUtil.RangeSlider = class {
 		return Math.min(max, Math.max(min, rawVal)); // Clamp eet
 	}
 
-	_getClosestThumb (evt) {
+	_getClosestThumb(evt) {
 		if (this._isSingle) return this._thumbLow;
 
-		const {x: trackOriginX, width: trackWidth} = this._dispTrackOuter.getBoundingClientRect();
-		const value = this._getRelativeValue(evt, {trackOriginX, trackWidth});
+		const { x: trackOriginX, width: trackWidth } = this._dispTrackOuter.getBoundingClientRect();
+		const value = this._getRelativeValue(evt, { trackOriginX, trackWidth });
 
 		if (value < this._compCpy._state[this._propCurMin]) return this._thumbLow;
 		if (value > this._compCpy._state[this._propCurMax]) return this._thumbHigh;
 
-		const {distToMin, distToMax} = this._getDistsToCurrentMinAndMax(value);
+		const { distToMin, distToMax } = this._getDistsToCurrentMinAndMax(value);
 		if (distToMax < distToMin) return this._thumbHigh;
 		return this._thumbLow;
 	}
 
-	_getDistsToCurrentMinAndMax (value) {
+	_getDistsToCurrentMinAndMax(value) {
 		if (this._isSingle) throw new Error(`Can not get distance to max value for singleton slider!`);
 
 		// Move the closest slider to this pip's location
 		const distToMin = Math.abs(this._compCpy._state[this._propCurMin] - value);
 		const distToMax = Math.abs(this._compCpy._state[this._propCurMax] - value);
-		return {distToMin, distToMax};
+		return { distToMin, distToMax };
 	}
 
-	_handleClick (evt, value) {
+	_handleClick(evt, value) {
 		evt.stopPropagation();
 		evt.preventDefault();
 
@@ -7069,18 +7075,18 @@ ComponentUiUtil.RangeSlider = class {
 		if (value > this._compCpy._state[this._propCurMax]) this._compCpy._state[this._propCurMax] = value;
 
 		// Move the closest slider to this pip's location
-		const {distToMin, distToMax} = this._getDistsToCurrentMinAndMax(value);
+		const { distToMin, distToMax } = this._getDistsToCurrentMinAndMax(value);
 
 		if (distToMax < distToMin) this._compCpy._state[this._propCurMax] = value;
 		else this._compCpy._state[this._propCurMin] = value;
 	}
 
-	_handleMouseDown (evt, thumb) {
+	_handleMouseDown(evt, thumb) {
 		evt.preventDefault();
 		evt.stopPropagation();
 
 		// region Set drag metadata
-		const {x: trackOriginX, width: trackWidth} = this._dispTrackOuter.getBoundingClientRect();
+		const { x: trackOriginX, width: trackWidth } = this._dispTrackOuter.getBoundingClientRect();
 
 		thumb.addClass(`ve-ui-slidr__thumb--hover`);
 
@@ -7094,7 +7100,7 @@ ComponentUiUtil.RangeSlider = class {
 		this._handleMouseMove(evt);
 	}
 
-	_handleMouseUp () {
+	_handleMouseUp() {
 		const wasActive = this._doDragCleanup();
 
 		// On finishing a slide, push our state to the parent comp
@@ -7110,7 +7116,7 @@ ComponentUiUtil.RangeSlider = class {
 		}
 	}
 
-	_handleMouseMove (evt) {
+	_handleMouseMove(evt) {
 		if (!this._dragMeta) return;
 
 		const val = this._getRelativeValue(evt, this._dragMeta);
@@ -7124,7 +7130,7 @@ ComponentUiUtil.RangeSlider = class {
 		}
 	}
 
-	_doDragCleanup () {
+	_doDragCleanup() {
 		const isActive = this._dragMeta != null;
 
 		if (this._dragMeta?.thumb) this._dragMeta.thumb.removeClass(`ve-ui-slidr__thumb--hover`);
@@ -7134,7 +7140,7 @@ ComponentUiUtil.RangeSlider = class {
 		return isActive;
 	}
 
-	static _init () {
+	static _init() {
 		if (this._isInit) return;
 
 		const onMove = evt => {
@@ -7164,7 +7170,7 @@ ComponentUiUtil.RangeSlider._MAX_PIPS = 40;
 
 class SettingsUtil {
 	static Setting = class {
-		constructor (
+		constructor(
 			{
 				type,
 				name,
@@ -7180,7 +7186,7 @@ class SettingsUtil {
 	};
 
 	static EnumSetting = class extends SettingsUtil.Setting {
-		constructor (
+		constructor(
 			{
 				enumVals,
 				...rest
@@ -7191,9 +7197,9 @@ class SettingsUtil {
 		}
 	};
 
-	static getDefaultSettings (settings) {
+	static getDefaultSettings(settings) {
 		return Object.entries(settings)
-			.mergeMap(([prop, {defaultVal}]) => ({[prop]: defaultVal}));
+			.mergeMap(([prop, { defaultVal }]) => ({ [prop]: defaultVal }));
 	}
 }
 

@@ -14,7 +14,7 @@ class NavBar {
 	static _CAT_CACHE = "缓存数据";
 
 	static _navbar = null;
-
+	static _dropdowns = [];
 	static _tree = {};
 
 	static _timerId = 1;
@@ -52,6 +52,8 @@ class NavBar {
 	static _initElements() {
 		NavBar._navbar = document.getElementById("navbar");
 		NavBar._tree = new NavBar.Node({
+			parent: null,
+			head: null,
 			body: NavBar._navbar,
 		});
 
@@ -61,7 +63,7 @@ class NavBar {
 		btnShowHide.innerHTML = "菜单";
 		btnShowHide.onclick = () => {
 			btnShowHide.classList.toggle("ve-active");
-			em(`.page__nav-hidden-mobile`).forEach(ele => ele.toggleClass("ve-block", btnShowHide.classList.contains("ve-active")));
+			globalThis.em(`.page__nav-hidden-mobile`).forEach(ele => ele.toggleClass("ve-block", btnShowHide.classList.contains("ve-active")));
 		};
 		document.getElementById("navigation").prepend(btnShowHide);
 
@@ -90,7 +92,7 @@ class NavBar {
 		this._addElement_li({ keyPath: [NavBar._CAT_PLAYER], page: "lifegen.html", aText: "这是你的人生" });
 		this._addElement_li({ keyPath: [NavBar._CAT_PLAYER], page: "names.html", aText: "命名" });
 		this._addElement_divider({ keyPath: [NavBar._CAT_PLAYER] });
-		this._addElement_li({ keyPath: [NavBar._CAT_PLAYER], page: "playerscreen.html", aText: "玩家帷幕" });
+		this._addElement_li({ keyPath: [NavBar._CAT_PLAYER], page: "playerscreen.html", aText: "玩家信息拼贴板" });
 
 		this._addElement_dropdown({ category: NavBar._CAT_DUNGEON_MASTER });
 		this._addElement_li({ keyPath: [NavBar._CAT_DUNGEON_MASTER], page: "dmscreen.html", aText: "DM 帷幕" });
@@ -382,19 +384,19 @@ class NavBar {
 
 	/**
 	 * Adds a new item to the navigation bar. Can be used either in root, or in a different UL.
-	 * @param {?Array<string>} keyPath - Element path to append this link to.
-	 * @param page - Where does this link to.
-	 * @param aText - What text does this link have.
-	 * @param [isSide] - True if this item is part of a side menu.
-	 * @param [aHash] - Optional hash to be appended to the base href
-	 * @param [isExternal] - If the item is an external link.
-	 * @param [isExternalMark] - If an "external link" icon should be shown.
-	 * @param [date] - A date to prefix the list item with.
-	 * @param [title] - Title for this nav item.
-	 * @param [isAddDateSpacer] - True if this item has no date, but is in a list of items with dates.
-	 * @param [source] - A source associated with this item, which should be displayed as a colored marker.
-	 * @param [isInAccordion] - True if this item is inside an accordion.
-	 *        FIXME(Future) this is a bodge; refactor the navbar CSS to avoid using Bootstrap.
+	 * @param {object} opts
+	 * @param {?Array<string>} [opts.keyPath] - Element path to append this link to.
+	 * @param {string} opts.page - Where does this link to.
+	 * @param {string} opts.aText - What text does this link have.
+	 * @param {boolean} [opts.isSide] - True if this item is part of a side menu.
+	 * @param {string} [opts.aHash] - Optional hash to be appended to the base href
+	 * @param {boolean} [opts.isExternal] - If the item is an external link.
+	 * @param {boolean} [opts.isExternalMark] - If an "external link" icon should be shown.
+	 * @param {string|number} [opts.date] - A date to prefix the list item with.
+	 * @param {string} [opts.title] - Title for this nav item.
+	 * @param {boolean} [opts.isAddDateSpacer] - True if this item has no date, but is in a list of items with dates.
+	 * @param {string} [opts.source] - A source associated with this item, which should be displayed as a colored marker.
+	 * @param {boolean} [opts.isInAccordion] - True if this item is inside an accordion.
 	 */
 	static _addElement_li(
 		{
@@ -463,6 +465,14 @@ class NavBar {
 		});
 	}
 
+	/**
+	 * @param {object} opts
+	 * @param {?Array<string>} [opts.keyPath] - Element path to append this link to.
+	 * @param {string} opts.category - Element category to create.
+	 * @param {string|number} [opts.date=null] - Optional date.
+	 * @param {boolean} [opts.isAddDateSpacer=false] - Optional spacer.
+	 * @param {string} [opts.source=null] - Optional source.
+	 */
 	static _addElement_accordion(
 		{
 			keyPath,
@@ -470,7 +480,7 @@ class NavBar {
 			date = null,
 			isAddDateSpacer = false,
 			source = null,
-		} = {},
+		},
 	) {
 		const parentNode = this._tree.getNode({ keyPath });
 
@@ -538,7 +548,14 @@ class NavBar {
 		parentNode.getBodyElement().appendChild(li);
 	}
 
-	static _addElement_label({ keyPath, html, date = null, isAddDateSpacer = false } = {}) {
+	/**
+	 * @param {object} opts
+	 * @param {?Array<string>} [opts.keyPath] - Element path to append this link to.
+	 * @param {string} opts.html - The text to display.
+	 * @param {string|number} [opts.date=null] - Optional date.
+	 * @param {boolean} [opts.isAddDateSpacer=false] - Optional spacer.
+	 */
+	static _addElement_label({ keyPath, html, date = null, isAddDateSpacer = false }) {
 		const parentNode = this._tree.getNode({ keyPath });
 
 		const li = document.createElement("li");
@@ -551,12 +568,13 @@ class NavBar {
 
 	/**
 	 * Adds a new dropdown starting list to the navigation bar
-	 * @param {?Array<string>} keyPath - Element path to append this link to.
-	 * @param {string} category - Element category to create.
-	 * @param {boolean} [isSide=false] - If this is a sideways dropdown.
-	 * @param {string} [page=null] - The page this dropdown is associated with.
+	 * @param {object} opts
+	 * @param {?Array<string>} [opts.keyPath] - Element path to append this link to.
+	 * @param {string} opts.category - Element category to create.
+	 * @param {boolean} [opts.isSide=false] - If this is a sideways dropdown.
+	 * @param {string} [opts.page=null] - The page this dropdown is associated with.
 	 */
-	static _addElement_dropdown({ keyPath = null, category, isSide = false, page = null } = {}) {
+	static _addElement_dropdown({ keyPath = null, category, isSide = false, page = null }) {
 		const parentNode = this._tree.getNode({ keyPath });
 
 		const li = document.createElement("li");
@@ -610,12 +628,13 @@ class NavBar {
 
 	/**
 	 * Special LI for button
-	 * @param {?Array<string>} keyPath - Element path to append this link to.
-	 * @param html Button text.
-	 * @param click Button click handler.
-	 * @param [context] Button context menu handler.
-	 * @param title Button title.
-	 * @param className Additional button classes.
+	 * @param {object} opts
+	 * @param {?Array<string>} [opts.keyPath] - Element path to append this link to.
+	 * @param {string} opts.html - Button text.
+	 * @param {(ev: MouseEvent) => any} opts.click - Button click handler.
+	 * @param {(ev: MouseEvent) => any} [opts.context] - Button context menu handler.
+	 * @param {string} [opts.title] - Button title.
+	 * @param {string} [opts.className] - Additional button classes.
 	 */
 	static _addElement_button(
 		{
@@ -647,8 +666,9 @@ class NavBar {
 
 	/**
 	 * Special LI for button
-	 * @param {?Array<string>} keyPath - Element path to append this link to.
-	 * @param metas
+	 * @param {object} opts
+	 * @param {?Array<string>} [opts.keyPath] - Element path to append this link to.
+	 * @param {Array<object>} opts.metas
 	 */
 	static _addElement_buttonSplit(
 		{
@@ -699,21 +719,17 @@ class NavBar {
 	}
 
 	static highlightCurrentPage() {
-		let currentPage = NavBar._getCurrentPage();
-		let hash = "";
+		const pathname = window.location.pathname;
+		const page = pathname.split("/").pop();
+		// @ts-ignore
+		const hash = window.location.hash.slice(1).split(globalThis.HASH_PART_SEP || ",")[0];
 
-		if (typeof _SEO_PAGE !== "undefined") currentPage = `${_SEO_PAGE}.html`;
-		else if (currentPage.toLowerCase() === "book.html" || currentPage.toLowerCase() === "adventure.html") {
-			hash = window.location.hash.split(",")[0].toLowerCase();
-		}
+		globalThis.e_(document.body).findAll(`li`).forEach(ele => ele.classList.remove("ve-active"));
 
-		const href = `${currentPage}${hash}`;
+		const nodeLeaf = this._tree.getLeafNode({ key: `${page}${hash ? `#${hash}`.toLowerCase() : ""}`, isAllowNull: true })
+			|| this._tree.getLeafNode({ key: page, isAllowNull: true });
 
-		NavBar._tree.doRemoveAllPageHighlights();
-		const node = this._tree.getLeafNode({ key: href, isAllowNull: true });
-		if (!node) return;
-
-		node.isActive = true;
+		if (nodeLeaf) nodeLeaf.isActive = true;
 	}
 
 	static _handleDropdownClick(ele, event, isSide) {
@@ -721,8 +737,14 @@ class NavBar {
 		event.stopPropagation();
 		if (isSide) return;
 		const isOpen = this._isDropdownOpen(ele);
-		if (isOpen) NavBar._dropdowns.forEach(ele => NavBar._closeDropdownElement(ele));
-		else NavBar._openDropdown(ele);
+		if (isOpen) NavBar._dropdowns.forEach(ele => {
+			const a = ele.querySelector(`a.ve-dropdown-toggle`);
+			// @ts-ignore
+			if (globalThis.e_(a).hasClass(`open`)) {
+				this._closeDropdown(a);
+			}
+		});
+		else this._openDropdown(ele);
 	}
 
 	/* -------------------------------------------- */
@@ -733,13 +755,24 @@ class NavBar {
 
 	/* -------------------------------------------- */
 
-	static _closeDropdown(ele) {
-		this._closeDropdownElement(ele.parentNode);
+	static _openDropdown(a) {
+		const ele = globalThis.e_(a);
+		ele.addClass(`open`);
+		ele.parent().addClass(`open`);
+		a.setAttribute(`aria-expanded`, `true`);
+	}
+
+	static _closeDropdown(a) {
+		const ele = globalThis.e_(a);
+		ele.removeClass(`open`);
+		ele.parent().removeClass(`open`);
+		a.setAttribute(`aria-expanded`, `false`);
 	}
 
 	static _closeDropdownElement(ele) {
 		ele.classList.remove("open");
-		ele.firstChild.setAttribute("aria-expanded", "false");
+		const a = ele.querySelector(`a.ve-dropdown-toggle`);
+		if (a) a.setAttribute("aria-expanded", "false");
 	}
 
 	static _closeAllDropdowns() {
@@ -747,26 +780,6 @@ class NavBar {
 	}
 
 	/* -------------------------------------------- */
-
-	static _openDropdown(ele) {
-		const lisOpen = [];
-
-		let parent = ele.parentNode;
-		NavBar._openDropdownElement(parent);
-		lisOpen.push(parent);
-
-		do {
-			parent = parent.parentNode;
-			if (parent.nodeName === "LI") {
-				NavBar._openDropdownElement(parent);
-				lisOpen.push(parent);
-			}
-		} while (parent.nodeName !== "NAV");
-
-		NavBar._dropdowns.filter(ele => !lisOpen.includes(ele)).forEach(ele => NavBar._closeDropdownElement(ele));
-
-		this._openDropdown_mutAlignment({ liNavbar: lisOpen.slice(-1)[0] });
-	}
 
 	static _openDropdownElement(ele) {
 		ele.classList.add("open");
@@ -794,8 +807,8 @@ class NavBar {
 	/* -------------------------------------------- */
 
 	static _handleItemMouseEnter(ele) {
-		ele = e_(ele);
-		const timerIds = ele.siblings("[data-timer-id]").map(eleSib => ({ ele: e_(eleSib), timerId: e_(eleSib).attr("data-timer-id") }));
+		ele = globalThis.e_(ele);
+		const timerIds = ele.siblings("[data-timer-id]").map(eleSib => ({ ele: globalThis.e_(eleSib), timerId: globalThis.e_(eleSib).attr("data-timer-id") }));
 		timerIds.forEach(({ ele, timerId }) => {
 			if (NavBar._timersOpen[timerId]) {
 				clearTimeout(NavBar._timersOpen[timerId]);
@@ -828,7 +841,7 @@ class NavBar {
 	}
 
 	static _handleSideItemMouseEnter(ele) {
-		const timerId = e_(ele).closest(`li.dropdown`).attr("data-timer-id");
+		const timerId = globalThis.e_(ele).closest(`li.dropdown`).attr("data-timer-id");
 		if (NavBar._timersClose[timerId]) {
 			clearTimeout(NavBar._timersClose[timerId]);
 			delete NavBar._timersClose[timerId];
@@ -837,7 +850,7 @@ class NavBar {
 	}
 
 	static _handleSideDropdownMouseEnter(ele) {
-		ele = e_(ele);
+		ele = globalThis.e_(ele);
 		const timerId = ele.parente().attr("data-timer-id") || NavBar._timerId++;
 		ele.parente().attr("data-timer-id", timerId);
 
@@ -856,7 +869,7 @@ class NavBar {
 	}
 
 	static _handleSideDropdownMouseLeave(ele) {
-		ele = e_(ele);
+		ele = globalThis.e_(ele);
 		if (!ele.parente().attr("data-timer-id")) return;
 		const timerId = ele.parente().attr("data-timer-id");
 		clearTimeout(NavBar._timersOpen[timerId]);
@@ -874,10 +887,15 @@ class NavBar {
 NavBar.InteractionManager = class {
 	static async _pOnClick_button_saveStateFile(evt) {
 		evt.preventDefault();
-		const sync = StorageUtil.syncGetDump();
-		const async = await StorageUtil.pGetDump();
-		const syncStyle = globalThis.styleSwitcher.constructor.syncGetStorageDump();
-		const dump = { sync, async, syncStyle };
+		const dump = {
+			// @ts-ignore
+			"storage": StorageUtil.syncGetDump ? StorageUtil.syncGetDump() : {},
+			// @ts-ignore
+			"storageAsync": StorageUtil.pGetDump ? await StorageUtil.pGetDump() : {},
+			// @ts-ignore
+			"localStorage": globalThis.syncGetStorageDump ? globalThis.syncGetStorageDump() : {},
+		};
+		// @ts-ignore
 		DataUtil.userDownload("5etools", dump, { fileType: "5etools" });
 	}
 
@@ -891,9 +909,12 @@ NavBar.InteractionManager = class {
 		const dump = jsons[0];
 
 		try {
-			StorageUtil.syncSetFromDump(dump.sync);
-			await StorageUtil.pSetFromDump(dump.async);
-			globalThis.styleSwitcher.constructor.syncSetFromStorageDump(dump.syncStyle);
+			// @ts-ignore
+			if (StorageUtil.syncSetFromDump && dump.storage) StorageUtil.syncSetFromDump(dump.storage);
+			// @ts-ignore
+			if (StorageUtil.pSetFromDump && dump.storageAsync) await StorageUtil.pSetFromDump(dump.storageAsync);
+			// @ts-ignore
+			if (globalThis.syncSetFromStorageDump && dump.localStorage) globalThis.syncSetFromStorageDump(dump.localStorage);
 			location.reload();
 		} catch (e) {
 			JqueryUtil.doToast({ type: "danger", content: `Failed to load state! ${VeCt.STR_SEE_CONSOLE}` });
@@ -1019,8 +1040,8 @@ NavBar.Node = class {
 };
 
 NavBar.NodeLink = class extends NavBar.Node {
-	constructor({ isInAccordion, lnk, ...rest }) {
-		super(rest);
+	constructor({ parent, head, isInAccordion, lnk }) {
+		super({ parent, head, body: null });
 		this._isInAccordion = !!isInAccordion;
 		this._lnk = lnk;
 	}
@@ -1044,8 +1065,8 @@ NavBar.NodeLink = class extends NavBar.Node {
 NavBar.NodeAccordion = class extends NavBar.Node {
 	static getDispToggleDisplayHtml(val) { return val ? `[\u2212]` : `[+]`; }
 
-	constructor({ dispToggle, ...rest }) {
-		super(rest);
+	constructor({ parent, head, body, dispToggle }) {
+		super({ parent, head, body });
 		this._dispToggle = dispToggle;
 		this._isExpanded = false;
 	}
