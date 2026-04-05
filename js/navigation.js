@@ -23,19 +23,19 @@ class NavBar {
 	static _timerMousePos = {};
 	static _cachedInstallEvent = null;
 
-	static init () {
+	static init() {
 		this._initInstallPrompt();
 		// render the visible elements ASAP
 		window.addEventListener("DOMContentLoaded", NavBar._onDomContentLoaded);
 		window.addEventListener("load", NavBar._onLoad);
 	}
 
-	static _onDomContentLoaded () {
+	static _onDomContentLoaded() {
 		NavBar._initElements();
 		NavBar.highlightCurrentPage();
 	}
 
-	static _onLoad () {
+	static _onLoad() {
 		NavBar._dropdowns = [...NavBar._navbar.querySelectorAll(`li.dropdown--navbar`)];
 		document.addEventListener("click", () => NavBar._closeAllDropdowns());
 
@@ -44,12 +44,12 @@ class NavBar {
 		NavBar._initAdventureBookElements().then(null);
 	}
 
-	static _initInstallPrompt () {
+	static _initInstallPrompt() {
 		NavBar._cachedInstallEvent = null;
 		window.addEventListener("beforeinstallprompt", e => NavBar._cachedInstallEvent = e);
 	}
 
-	static _initElements () {
+	static _initElements() {
 		NavBar._navbar = document.getElementById("navbar");
 		NavBar._tree = new NavBar.Node({
 			body: NavBar._navbar,
@@ -65,68 +65,70 @@ class NavBar {
 		};
 		document.getElementById("navigation").prepend(btnShowHide);
 
-		this._addElement_li({page: "index.html", aText: "首页"});
+		this._addElement_li({ page: "index.html", aText: "首页" });
 
-		this._addElement_dropdown({category: NavBar._CAT_RULES});
-		this._addElement_li({keyPath: [NavBar._CAT_RULES], page: "variantrules.html", aText: "术语汇编"});
-		this._addElement_li({keyPath: [NavBar._CAT_RULES], page: "tables.html", aText: "表格"});
-		this._addElement_divider({keyPath: [NavBar._CAT_RULES]});
-		this._addElement_dropdown({keyPath: [NavBar._CAT_RULES], category: NavBar._CAT_BOOKS, isSide: true, page: "books.html"});
-		this._addElement_li({keyPath: [NavBar._CAT_RULES, NavBar._CAT_BOOKS], page: "books.html", aText: "查看所有/自制内容"});
-		this._addElement_divider({keyPath: [NavBar._CAT_RULES]});
-		this._addElement_li({keyPath: [NavBar._CAT_RULES], page: "quickreference.html", aText: "快速参考(5e/2014)"});
+		this._addElement_dropdown({ category: NavBar._CAT_RULES });
+		this._addElement_li({ keyPath: [NavBar._CAT_RULES], page: "variantrules.html", aText: "术语汇编" });
+		this._addElement_li({ keyPath: [NavBar._CAT_RULES], page: "tables.html", aText: "表格" });
+		this._addElement_divider({ keyPath: [NavBar._CAT_RULES] });
+		this._addElement_dropdown({ keyPath: [NavBar._CAT_RULES], category: NavBar._CAT_BOOKS, isSide: true, page: "books.html" });
+		this._addElement_li({ keyPath: [NavBar._CAT_RULES, NavBar._CAT_BOOKS], page: "books.html", aText: "查看所有/自制内容" });
+		this._addElement_divider({ keyPath: [NavBar._CAT_RULES] });
+		this._addElement_li({ keyPath: [NavBar._CAT_RULES], page: "quickreference.html", aText: "快速参考(5e/2014)" });
 
-		this._addElement_dropdown({category: NavBar._CAT_PLAYER});
-		this._addElement_li({keyPath: [NavBar._CAT_PLAYER], page: "classes.html", aText: "职业"});
-		this._addElement_li({keyPath: [NavBar._CAT_PLAYER], page: "backgrounds.html", aText: "背景"});
-		this._addElement_li({keyPath: [NavBar._CAT_PLAYER], page: "feats.html", aText: "专长"});
-		this._addElement_li({keyPath: [NavBar._CAT_PLAYER], page: "races.html", aText: "种族"});
-		this._addElement_li({keyPath: [NavBar._CAT_PLAYER], page: "charcreationoptions.html", aText: "其他角色创建选项"});
-		this._addElement_li({keyPath: [NavBar._CAT_PLAYER], page: "optionalfeatures.html", aText: "职业能力选项"});
-		this._addElement_divider({keyPath: [NavBar._CAT_PLAYER]});
-		this._addElement_li({keyPath: [NavBar._CAT_PLAYER], page: "statgen.html", aText: "属性生成器"});
-		this._addElement_li({keyPath: [NavBar._CAT_PLAYER], page: "trpgcard.html", aText: "5.5e车卡工具（实验）"});
-		this._addElement_divider({keyPath: [NavBar._CAT_PLAYER]});
-		this._addElement_li({keyPath: [NavBar._CAT_PLAYER], page: "lifegen.html", aText: "这是你的人生"});
-		this._addElement_li({keyPath: [NavBar._CAT_PLAYER], page: "names.html", aText: "命名"});
+		this._addElement_dropdown({ category: NavBar._CAT_PLAYER });
+		this._addElement_li({ keyPath: [NavBar._CAT_PLAYER], page: "classes.html", aText: "职业" });
+		this._addElement_li({ keyPath: [NavBar._CAT_PLAYER], page: "backgrounds.html", aText: "背景" });
+		this._addElement_li({ keyPath: [NavBar._CAT_PLAYER], page: "feats.html", aText: "专长" });
+		this._addElement_li({ keyPath: [NavBar._CAT_PLAYER], page: "races.html", aText: "种族" });
+		this._addElement_li({ keyPath: [NavBar._CAT_PLAYER], page: "charcreationoptions.html", aText: "其他角色创建选项" });
+		this._addElement_li({ keyPath: [NavBar._CAT_PLAYER], page: "optionalfeatures.html", aText: "职业能力选项" });
+		this._addElement_divider({ keyPath: [NavBar._CAT_PLAYER] });
+		this._addElement_li({ keyPath: [NavBar._CAT_PLAYER], page: "statgen.html", aText: "属性生成器" });
+		this._addElement_li({ keyPath: [NavBar._CAT_PLAYER], page: "trpgcard.html", aText: "5.5e车卡工具（实验）" });
+		this._addElement_divider({ keyPath: [NavBar._CAT_PLAYER] });
+		this._addElement_li({ keyPath: [NavBar._CAT_PLAYER], page: "lifegen.html", aText: "这是你的人生" });
+		this._addElement_li({ keyPath: [NavBar._CAT_PLAYER], page: "names.html", aText: "命名" });
+		this._addElement_divider({ keyPath: [NavBar._CAT_PLAYER] });
+		this._addElement_li({ keyPath: [NavBar._CAT_PLAYER], page: "playerscreen.html", aText: "玩家帷幕" });
 
-		this._addElement_dropdown({category: NavBar._CAT_DUNGEON_MASTER});
-		this._addElement_li({keyPath: [NavBar._CAT_DUNGEON_MASTER], page: "dmscreen.html", aText: "DM 帷幕"});
-		this._addElement_divider({keyPath: [NavBar._CAT_DUNGEON_MASTER]});
-		this._addElement_dropdown({keyPath: [NavBar._CAT_DUNGEON_MASTER], category: NavBar._CAT_ADVENTURES, isSide: true, page: "adventures.html"});
-		this._addElement_li({keyPath: [NavBar._CAT_DUNGEON_MASTER, NavBar._CAT_ADVENTURES], page: "adventures.html", aText: "查看所有/自制内容"});
-		this._addElement_li({keyPath: [NavBar._CAT_DUNGEON_MASTER], page: "cultsboons.html", aText: "异教 & 超自然赠礼"});
-		this._addElement_li({keyPath: [NavBar._CAT_DUNGEON_MASTER], page: "objects.html", aText: "物件"});
-		this._addElement_li({keyPath: [NavBar._CAT_DUNGEON_MASTER], page: "trapshazards.html", aText: "陷阱 & 危害"});
-		this._addElement_divider({keyPath: [NavBar._CAT_DUNGEON_MASTER]});
-		this._addElement_li({keyPath: [NavBar._CAT_DUNGEON_MASTER], page: "crcalculator.html", aText: "CR 计算器 (5e/2014)"});
-		this._addElement_li({keyPath: [NavBar._CAT_DUNGEON_MASTER], page: "encountergen.html", aText: "遭遇生成器"});
-		this._addElement_li({keyPath: [NavBar._CAT_DUNGEON_MASTER], page: "lootgen.html", aText: "战利品生成器"});
-		this._addElement_divider({keyPath: [NavBar._CAT_DUNGEON_MASTER]});
-		this._addElement_li({keyPath: [NavBar._CAT_DUNGEON_MASTER], page: "maps.html", aText: "地图"});
+		this._addElement_dropdown({ category: NavBar._CAT_DUNGEON_MASTER });
+		this._addElement_li({ keyPath: [NavBar._CAT_DUNGEON_MASTER], page: "dmscreen.html", aText: "DM 帷幕" });
+		this._addElement_divider({ keyPath: [NavBar._CAT_DUNGEON_MASTER] });
+		this._addElement_dropdown({ keyPath: [NavBar._CAT_DUNGEON_MASTER], category: NavBar._CAT_ADVENTURES, isSide: true, page: "adventures.html" });
+		this._addElement_li({ keyPath: [NavBar._CAT_DUNGEON_MASTER, NavBar._CAT_ADVENTURES], page: "adventures.html", aText: "查看所有/自制内容" });
+		this._addElement_li({ keyPath: [NavBar._CAT_DUNGEON_MASTER], page: "cultsboons.html", aText: "异教 & 超自然赠礼" });
+		this._addElement_li({ keyPath: [NavBar._CAT_DUNGEON_MASTER], page: "objects.html", aText: "物件" });
+		this._addElement_li({ keyPath: [NavBar._CAT_DUNGEON_MASTER], page: "trapshazards.html", aText: "陷阱 & 危害" });
+		this._addElement_divider({ keyPath: [NavBar._CAT_DUNGEON_MASTER] });
+		this._addElement_li({ keyPath: [NavBar._CAT_DUNGEON_MASTER], page: "crcalculator.html", aText: "CR 计算器 (5e/2014)" });
+		this._addElement_li({ keyPath: [NavBar._CAT_DUNGEON_MASTER], page: "encountergen.html", aText: "遭遇生成器" });
+		this._addElement_li({ keyPath: [NavBar._CAT_DUNGEON_MASTER], page: "lootgen.html", aText: "战利品生成器" });
+		this._addElement_divider({ keyPath: [NavBar._CAT_DUNGEON_MASTER] });
+		this._addElement_li({ keyPath: [NavBar._CAT_DUNGEON_MASTER], page: "maps.html", aText: "地图" });
 
-		this._addElement_dropdown({category: NavBar._CAT_REFERENCES});
-		this._addElement_li({keyPath: [NavBar._CAT_REFERENCES], page: "actions.html", aText: "动作"});
-		this._addElement_li({keyPath: [NavBar._CAT_REFERENCES], page: "bastions.html", aText: "据点"});
-		this._addElement_li({keyPath: [NavBar._CAT_REFERENCES], page: "bestiary.html", aText: "怪物图鉴"});
-		this._addElement_li({keyPath: [NavBar._CAT_REFERENCES], page: "conditionsdiseases.html", aText: "状态 & 疾病"});
-		this._addElement_li({keyPath: [NavBar._CAT_REFERENCES], page: "decks.html", aText: "牌组"});
-		this._addElement_li({keyPath: [NavBar._CAT_REFERENCES], page: "deities.html", aText: "神祇"});
-		this._addElement_li({keyPath: [NavBar._CAT_REFERENCES], page: "items.html", aText: "物品"});
-		this._addElement_li({keyPath: [NavBar._CAT_REFERENCES], page: "languages.html", aText: "语言"});
-		this._addElement_li({keyPath: [NavBar._CAT_REFERENCES], page: "rewards.html", aText: "其他奖励"});
-		this._addElement_li({keyPath: [NavBar._CAT_REFERENCES], page: "psionics.html", aText: "灵能"});
-		this._addElement_li({keyPath: [NavBar._CAT_REFERENCES], page: "spells.html", aText: "法术"});
-		this._addElement_li({keyPath: [NavBar._CAT_REFERENCES], page: "vehicles.html", aText: "载具"});
-		this._addElement_divider({keyPath: [NavBar._CAT_REFERENCES]});
-		this._addElement_li({keyPath: [NavBar._CAT_REFERENCES], page: "recipes.html", aText: "食谱"});
+		this._addElement_dropdown({ category: NavBar._CAT_REFERENCES });
+		this._addElement_li({ keyPath: [NavBar._CAT_REFERENCES], page: "actions.html", aText: "动作" });
+		this._addElement_li({ keyPath: [NavBar._CAT_REFERENCES], page: "bastions.html", aText: "据点" });
+		this._addElement_li({ keyPath: [NavBar._CAT_REFERENCES], page: "bestiary.html", aText: "怪物图鉴" });
+		this._addElement_li({ keyPath: [NavBar._CAT_REFERENCES], page: "conditionsdiseases.html", aText: "状态 & 疾病" });
+		this._addElement_li({ keyPath: [NavBar._CAT_REFERENCES], page: "decks.html", aText: "牌组" });
+		this._addElement_li({ keyPath: [NavBar._CAT_REFERENCES], page: "deities.html", aText: "神祇" });
+		this._addElement_li({ keyPath: [NavBar._CAT_REFERENCES], page: "items.html", aText: "物品" });
+		this._addElement_li({ keyPath: [NavBar._CAT_REFERENCES], page: "languages.html", aText: "语言" });
+		this._addElement_li({ keyPath: [NavBar._CAT_REFERENCES], page: "rewards.html", aText: "其他奖励" });
+		this._addElement_li({ keyPath: [NavBar._CAT_REFERENCES], page: "psionics.html", aText: "灵能" });
+		this._addElement_li({ keyPath: [NavBar._CAT_REFERENCES], page: "spells.html", aText: "法术" });
+		this._addElement_li({ keyPath: [NavBar._CAT_REFERENCES], page: "vehicles.html", aText: "载具" });
+		this._addElement_divider({ keyPath: [NavBar._CAT_REFERENCES] });
+		this._addElement_li({ keyPath: [NavBar._CAT_REFERENCES], page: "recipes.html", aText: "食谱" });
 
-		this._addElement_dropdown({category: NavBar._CAT_UTILITIES});
-		this._addElement_li({keyPath: [NavBar._CAT_UTILITIES], page: "search.html", aText: "搜索"});
-		this._addElement_divider({keyPath: [NavBar._CAT_UTILITIES]});
-		this._addElement_li({keyPath: [NavBar._CAT_UTILITIES], page: "blocklist.html", aText: "内容黑名单"});
-		this._addElement_li({keyPath: [NavBar._CAT_UTILITIES], page: "manageprerelease.html", aText: I18nUtil.get("page.manageprelease.manage_prerelease_content")});
-		this._addElement_li({keyPath: [NavBar._CAT_UTILITIES], page: "managebrew.html", aText: "管理所有自制内容"});
+		this._addElement_dropdown({ category: NavBar._CAT_UTILITIES });
+		this._addElement_li({ keyPath: [NavBar._CAT_UTILITIES], page: "search.html", aText: "搜索" });
+		this._addElement_divider({ keyPath: [NavBar._CAT_UTILITIES] });
+		this._addElement_li({ keyPath: [NavBar._CAT_UTILITIES], page: "blocklist.html", aText: "内容黑名单" });
+		this._addElement_li({ keyPath: [NavBar._CAT_UTILITIES], page: "manageprerelease.html", aText: I18nUtil.get("page.manageprelease.manage_prerelease_content") });
+		this._addElement_li({ keyPath: [NavBar._CAT_UTILITIES], page: "managebrew.html", aText: "管理所有自制内容" });
 		this._addElement_buttonSplit(
 			{
 				keyPath: [NavBar._CAT_UTILITIES],
@@ -136,7 +138,7 @@ class NavBar {
 						click: async evt => {
 							evt.stopPropagation();
 							evt.preventDefault();
-							const {ManageBrewUi} = await import("./utils-brew/utils-brew-ui-manage.js");
+							const { ManageBrewUi } = await import("./utils-brew/utils-brew-ui-manage.js");
 							await ManageBrewUi.pOnClickBtnLoadAllPartnered();
 						},
 					},
@@ -147,31 +149,31 @@ class NavBar {
 							evt.stopPropagation();
 							evt.preventDefault();
 							const ele = evt.currentTarget;
-							const {ManageBrewUi} = await import("./utils-brew/utils-brew-ui-manage.js");
-							await ManageBrewUi.pOnClickBtnExportListAsUrl({ele});
+							const { ManageBrewUi } = await import("./utils-brew/utils-brew-ui-manage.js");
+							await ManageBrewUi.pOnClickBtnExportListAsUrl({ ele });
 						},
 					},
 				],
 			},
 		);
-		this._addElement_divider({keyPath: [NavBar._CAT_UTILITIES]});
-		this._addElement_li({keyPath: [NavBar._CAT_UTILITIES], page: "inittrackerplayerview.html", aText: "先攻追踪器:玩家视图"});
-		this._addElement_divider({keyPath: [NavBar._CAT_UTILITIES]});
-		this._addElement_li({keyPath: [NavBar._CAT_UTILITIES], page: "renderdemo.html", aText: "渲染器 Demo"});
-		this._addElement_li({keyPath: [NavBar._CAT_UTILITIES], page: "makebrew.html", aText: I18nUtil.get("page.makebrew.title")});
-		this._addElement_li({keyPath: [NavBar._CAT_UTILITIES], page: "makecards.html", aText: "RPG 卡片 JSON 生成器"});
-		this._addElement_li({keyPath: [NavBar._CAT_UTILITIES], page: "converter.html", aText: "文本转换器"});
-		this._addElement_divider({keyPath: [NavBar._CAT_UTILITIES]});
-		this._addElement_li({keyPath: [NavBar._CAT_UTILITIES], page: "plutonium.html", aText: "Plutonium (Foundry Module) 功能"});
-		this._addElement_divider({keyPath: [NavBar._CAT_UTILITIES]});
-		this._addElement_li({keyPath: [NavBar._CAT_UTILITIES], page: "https://wiki.tercept.net/en/betteR20", aText: "Roll20 脚本小帮手", isExternal: true, isExternalMark: true});
-		this._addElement_divider({keyPath: [NavBar._CAT_UTILITIES]});
-		this._addElement_li({keyPath: [NavBar._CAT_UTILITIES], page: "changelog.html", aText: "更新日志"});
-		this._addElement_li({keyPath: [NavBar._CAT_UTILITIES], page: NavBar._getCurrentWikiHelpPage(), aText: "页面帮助", isExternal: true, isExternalMark: true});
+		this._addElement_divider({ keyPath: [NavBar._CAT_UTILITIES] });
+		this._addElement_li({ keyPath: [NavBar._CAT_UTILITIES], page: "inittrackerplayerview.html", aText: "先攻追踪器:玩家视图" });
+		this._addElement_divider({ keyPath: [NavBar._CAT_UTILITIES] });
+		this._addElement_li({ keyPath: [NavBar._CAT_UTILITIES], page: "renderdemo.html", aText: "渲染器 Demo" });
+		this._addElement_li({ keyPath: [NavBar._CAT_UTILITIES], page: "makebrew.html", aText: I18nUtil.get("page.makebrew.title") });
+		this._addElement_li({ keyPath: [NavBar._CAT_UTILITIES], page: "makecards.html", aText: "RPG 卡片 JSON 生成器" });
+		this._addElement_li({ keyPath: [NavBar._CAT_UTILITIES], page: "converter.html", aText: "文本转换器" });
+		this._addElement_divider({ keyPath: [NavBar._CAT_UTILITIES] });
+		this._addElement_li({ keyPath: [NavBar._CAT_UTILITIES], page: "plutonium.html", aText: "Plutonium (Foundry Module) 功能" });
+		this._addElement_divider({ keyPath: [NavBar._CAT_UTILITIES] });
+		this._addElement_li({ keyPath: [NavBar._CAT_UTILITIES], page: "https://wiki.tercept.net/en/betteR20", aText: "Roll20 脚本小帮手", isExternal: true, isExternalMark: true });
+		this._addElement_divider({ keyPath: [NavBar._CAT_UTILITIES] });
+		this._addElement_li({ keyPath: [NavBar._CAT_UTILITIES], page: "changelog.html", aText: "更新日志" });
+		this._addElement_li({ keyPath: [NavBar._CAT_UTILITIES], page: NavBar._getCurrentWikiHelpPage(), aText: "页面帮助", isExternal: true, isExternalMark: true });
 		// this._addElement_divider({keyPath: [NavBar._CAT_UTILITIES]});
 		// this._addElement_li({keyPath: [NavBar._CAT_UTILITIES], page: "privacy-policy.html", aText: "隐私政策"});
 
-		this._addElement_dropdown({category: NavBar._CAT_SETTINGS});
+		this._addElement_dropdown({ category: NavBar._CAT_SETTINGS });
 		this._addElement_button(
 			{
 				keyPath: [NavBar._CAT_SETTINGS],
@@ -182,7 +184,7 @@ class NavBar {
 				},
 			},
 		);
-		this._addElement_divider({keyPath: [NavBar._CAT_SETTINGS]});
+		this._addElement_divider({ keyPath: [NavBar._CAT_SETTINGS] });
 		this._addElement_button(
 			{
 				keyPath: [NavBar._CAT_SETTINGS],
@@ -199,7 +201,7 @@ class NavBar {
 				title: "Load previously-saved data (loaded homebrew, active blocklists, DM Screen configuration,...) from a file.",
 			},
 		);
-		this._addElement_divider({keyPath: [NavBar._CAT_SETTINGS]});
+		this._addElement_divider({ keyPath: [NavBar._CAT_SETTINGS] });
 		this._addElement_button(
 			{
 				keyPath: [NavBar._CAT_SETTINGS],
@@ -208,13 +210,13 @@ class NavBar {
 				title: "Add the site to your home screen. When used in conjunction with the Preload Offline Data option, this can create a functional offline copy of the site.",
 			},
 		);
-		this._addElement_dropdown({keyPath: [NavBar._CAT_SETTINGS], category: NavBar._CAT_CACHE, isSide: true});
-		this._addElement_label({keyPath: [NavBar._CAT_SETTINGS, NavBar._CAT_CACHE], html: `<p>缓存数据用于离线使用。</p><p>注意，访问页面会自动缓存该页面的数据。</p><p>注意，已经缓存的数据如果不是最新的，不会被覆盖。</p>`});
+		this._addElement_dropdown({ keyPath: [NavBar._CAT_SETTINGS], category: NavBar._CAT_CACHE, isSide: true });
+		this._addElement_label({ keyPath: [NavBar._CAT_SETTINGS, NavBar._CAT_CACHE], html: `<p>缓存数据用于离线使用。</p><p>注意，访问页面会自动缓存该页面的数据。</p><p>注意，已经缓存的数据如果不是最新的，不会被覆盖。</p>` });
 		this._addElement_button(
 			{
 				keyPath: [NavBar._CAT_SETTINGS, NavBar._CAT_CACHE],
 				html: "缓存冒险文本 <small>(50MB+)</small>",
-				click: (evt) => NavBar.InteractionManager._pOnClick_button_preloadOffline(evt, {route: /data\/adventure/}),
+				click: (evt) => NavBar.InteractionManager._pOnClick_button_preloadOffline(evt, { route: /data\/adventure/ }),
 				title: "缓存冒险文本用于离线使用。",
 			},
 		);
@@ -222,7 +224,7 @@ class NavBar {
 			{
 				keyPath: [NavBar._CAT_SETTINGS, NavBar._CAT_CACHE],
 				html: "缓存书籍图片 <small>(1GB+)</small>",
-				click: (evt) => NavBar.InteractionManager._pOnClick_button_preloadOffline(evt, {route: /img\/book/, isRequireImages: true}),
+				click: (evt) => NavBar.InteractionManager._pOnClick_button_preloadOffline(evt, { route: /img\/book/, isRequireImages: true }),
 				title: "缓存书籍图片用于离线使用。注意，书籍文本会自动缓存。",
 			},
 		);
@@ -230,7 +232,7 @@ class NavBar {
 			{
 				keyPath: [NavBar._CAT_SETTINGS, NavBar._CAT_CACHE],
 				html: "缓存冒险文本和图片 <small>(2GB+)</small>",
-				click: (evt) => NavBar.InteractionManager._pOnClick_button_preloadOffline(evt, {route: /(?:data|img)\/adventure/, isRequireImages: true}),
+				click: (evt) => NavBar.InteractionManager._pOnClick_button_preloadOffline(evt, { route: /(?:data|img)\/adventure/, isRequireImages: true }),
 				title: "缓存冒险文本和图片用于离线使用。",
 			},
 		);
@@ -238,7 +240,7 @@ class NavBar {
 			{
 				keyPath: [NavBar._CAT_SETTINGS, NavBar._CAT_CACHE],
 				html: "缓存所有图片 <small>(4GB+)</small>",
-				click: (evt) => NavBar.InteractionManager._pOnClick_button_preloadOffline(evt, {route: /img/, isRequireImages: true}),
+				click: (evt) => NavBar.InteractionManager._pOnClick_button_preloadOffline(evt, { route: /img/, isRequireImages: true }),
 				title: "缓存所有图片用于离线使用。",
 			},
 		);
@@ -246,11 +248,11 @@ class NavBar {
 			{
 				keyPath: [NavBar._CAT_SETTINGS, NavBar._CAT_CACHE],
 				html: "缓存所有数据 <small>(5GB+)</small>",
-				click: (evt) => NavBar.InteractionManager._pOnClick_button_preloadOffline(evt, {route: /./, isRequireImages: true}),
+				click: (evt) => NavBar.InteractionManager._pOnClick_button_preloadOffline(evt, { route: /./, isRequireImages: true }),
 				title: "缓存所有数据用于离线使用。",
 			},
 		);
-		this._addElement_divider({keyPath: [NavBar._CAT_SETTINGS, NavBar._CAT_CACHE]});
+		this._addElement_divider({ keyPath: [NavBar._CAT_SETTINGS, NavBar._CAT_CACHE] });
 		this._addElement_button(
 			{
 				keyPath: [NavBar._CAT_SETTINGS, NavBar._CAT_CACHE],
@@ -260,7 +262,7 @@ class NavBar {
 			},
 		);
 
-		this._addElement_li({page: "https://wiki.tercept.net/en/5eTools", aText: "Help", isExternal: true});
+		this._addElement_li({ page: "https://wiki.tercept.net/en/5eTools", aText: "Help", isExternal: true });
 	}
 
 	/**
@@ -268,7 +270,7 @@ class NavBar {
 	 * - An index JSON file.
 	 * - The user's Blocklist.
 	 */
-	static async _initAdventureBookElements () {
+	static async _initAdventureBookElements() {
 		await Promise.all([
 			PrereleaseUtil.pInit(),
 			BrewUtil2.pInit(),
@@ -295,7 +297,7 @@ class NavBar {
 				parentCategoryPath: [NavBar._CAT_DUNGEON_MASTER, NavBar._CAT_ADVENTURES],
 				fnSort: SortUtil.ascSortAdventure.bind(SortUtil),
 			},
-		].forEach(({prop, parentCategoryPath, page, fnSort}) => {
+		].forEach(({ prop, parentCategoryPath, page, fnSort }) => {
 			const fromPrerelease = MiscUtil.copyFast(prerelease?.[prop] || []);
 			const fromBrew = MiscUtil.copyFast(brew?.[prop] || []);
 
@@ -307,17 +309,17 @@ class NavBar {
 			fromBrew.forEach(mutParentName);
 
 			const metas = [...adventureBookIndex[prop], ...fromPrerelease, ...fromBrew]
-				.filter(it => !ExcludeUtil.isExcluded(UrlUtil.encodeForHash(it.id), prop, it.source, {isNoCount: true}));
+				.filter(it => !ExcludeUtil.isExcluded(UrlUtil.encodeForHash(it.id), prop, it.source, { isNoCount: true }));
 
 			if (!metas.length) return;
 
 			SourceUtil.ADV_BOOK_GROUPS
-				.forEach(({group, displayName}) => {
+				.forEach(({ group, displayName }) => {
 					const inGroup = metas.filter(it => (it.group || "other") === group);
 					if (!inGroup.length) return;
 
-					this._addElement_divider({keyPath: parentCategoryPath});
-					this._addElement_label({keyPath: parentCategoryPath, html: displayName, isAddDateSpacer: true});
+					this._addElement_divider({ keyPath: parentCategoryPath });
+					this._addElement_label({ keyPath: parentCategoryPath, html: displayName, isAddDateSpacer: true });
 
 					const seenYears = new Set();
 
@@ -329,7 +331,7 @@ class NavBar {
 							if (year != null) seenYears.add(year);
 
 							if (indexMeta.parentSource) {
-								if (!this._tree.getNode({keyPath: [...parentCategoryPath, indexMeta.parentName], isAllowNull: true})) {
+								if (!this._tree.getNode({ keyPath: [...parentCategoryPath, indexMeta.parentName], isAllowNull: true })) {
 									this._addElement_accordion(
 										{
 											keyPath: parentCategoryPath,
@@ -394,7 +396,7 @@ class NavBar {
 	 * @param [isInAccordion] - True if this item is inside an accordion.
 	 *        FIXME(Future) this is a bodge; refactor the navbar CSS to avoid using Bootstrap.
 	 */
-	static _addElement_li (
+	static _addElement_li(
 		{
 			keyPath = null,
 			page,
@@ -410,7 +412,7 @@ class NavBar {
 			isInAccordion,
 		},
 	) {
-		const parentNode = this._tree.getNode({keyPath});
+		const parentNode = this._tree.getNode({ keyPath });
 
 		const hashPart = aHash ? `#${aHash}`.toLowerCase() : "";
 		const href = `${page}${hashPart}`;
@@ -432,7 +434,7 @@ class NavBar {
 
 		const a = document.createElement("a");
 		a.href = href;
-		a.innerHTML = `${this._addElement_getDatePrefix({date: date, isAddDateSpacer: isAddDateSpacer})}${this._addElement_getSourcePrefix({source: source})}${aText}${this._addElement_getSourceSuffix({source: source})}`;
+		a.innerHTML = `${this._addElement_getDatePrefix({ date: date, isAddDateSpacer: isAddDateSpacer })}${this._addElement_getSourcePrefix({ source: source })}${aText}${this._addElement_getSourceSuffix({ source: source })}`;
 		a.classList.add("nav__link");
 		if (isInAccordion) a.classList.add(`nav2-accord__lnk-item`, `ve-inline-block`, `ve-w-100`);
 
@@ -461,7 +463,7 @@ class NavBar {
 		});
 	}
 
-	static _addElement_accordion (
+	static _addElement_accordion(
 		{
 			keyPath,
 			category,
@@ -470,7 +472,7 @@ class NavBar {
 			source = null,
 		} = {},
 	) {
-		const parentNode = this._tree.getNode({keyPath});
+		const parentNode = this._tree.getNode({ keyPath });
 
 		const li = document.createElement("li");
 		li.className = "nav2-accord__wrp";
@@ -486,7 +488,7 @@ class NavBar {
 		};
 
 		const dispText = document.createElement("div");
-		dispText.innerHTML = `${this._addElement_getDatePrefix({date, isAddDateSpacer})}${this._addElement_getSourcePrefix({source})}${category}`;
+		dispText.innerHTML = `${this._addElement_getDatePrefix({ date, isAddDateSpacer })}${this._addElement_getSourcePrefix({ source })}${category}`;
 
 		const dispToggle = document.createElement("div");
 		dispToggle.textContent = NavBar.NodeAccordion.getDispToggleDisplayHtml(false);
@@ -518,16 +520,16 @@ class NavBar {
 		});
 	}
 
-	static _addElement_getDatePrefix ({date, isAddDateSpacer}) { return `${(date != null || isAddDateSpacer) ? `<div class="ve-small ve-mr-2 page__nav-date ve-inline-block ve-text-right ve-inline-block" aria-hidden="true">${date || ""}</div>` : ""}`; }
-	static _addElement_getSourcePrefix ({source}) { return `${source != null ? `<div class="nav2-list__disp-source ${Parser.sourceJsonToSourceClassname(source)}"></div>` : ""}`; }
+	static _addElement_getDatePrefix({ date, isAddDateSpacer }) { return `${(date != null || isAddDateSpacer) ? `<div class="ve-small ve-mr-2 page__nav-date ve-inline-block ve-text-right ve-inline-block" aria-hidden="true">${date || ""}</div>` : ""}`; }
+	static _addElement_getSourcePrefix({ source }) { return `${source != null ? `<div class="nav2-list__disp-source ${Parser.sourceJsonToSourceClassname(source)}"></div>` : ""}`; }
 
-	static _addElement_getSourceSuffix ({source}) {
+	static _addElement_getSourceSuffix({ source }) {
 		if (source == null) return "";
-		return Parser.sourceJsonToMarkerHtml(source, {isAddBrackets: true, additionalStyles: "ve-ml-1 nav2-list__disp-legacy-marker"});
+		return Parser.sourceJsonToMarkerHtml(source, { isAddBrackets: true, additionalStyles: "ve-ml-1 nav2-list__disp-legacy-marker" });
 	}
 
-	static _addElement_divider ({keyPath}) {
-		const parentNode = this._tree.getNode({keyPath});
+	static _addElement_divider({ keyPath }) {
+		const parentNode = this._tree.getNode({ keyPath });
 
 		const li = document.createElement("li");
 		li.setAttribute("role", "presentation");
@@ -536,13 +538,13 @@ class NavBar {
 		parentNode.getBodyElement().appendChild(li);
 	}
 
-	static _addElement_label ({keyPath, html, date = null, isAddDateSpacer = false} = {}) {
-		const parentNode = this._tree.getNode({keyPath});
+	static _addElement_label({ keyPath, html, date = null, isAddDateSpacer = false } = {}) {
+		const parentNode = this._tree.getNode({ keyPath });
 
 		const li = document.createElement("li");
 		li.setAttribute("role", "presentation");
 		li.className = "ve-italic ve-muted ve-small nav2-list__label";
-		li.innerHTML = `${this._addElement_getDatePrefix({date, isAddDateSpacer})}${html}`;
+		li.innerHTML = `${this._addElement_getDatePrefix({ date, isAddDateSpacer })}${html}`;
 
 		parentNode.getBodyElement().appendChild(li);
 	}
@@ -554,8 +556,8 @@ class NavBar {
 	 * @param {boolean} [isSide=false] - If this is a sideways dropdown.
 	 * @param {string} [page=null] - The page this dropdown is associated with.
 	 */
-	static _addElement_dropdown ({keyPath = null, category, isSide = false, page = null} = {}) {
-		const parentNode = this._tree.getNode({keyPath});
+	static _addElement_dropdown({ keyPath = null, category, isSide = false, page = null } = {}) {
+		const parentNode = this._tree.getNode({ keyPath });
 
 		const li = document.createElement("li");
 		li.setAttribute("role", "presentation");
@@ -615,7 +617,7 @@ class NavBar {
 	 * @param title Button title.
 	 * @param className Additional button classes.
 	 */
-	static _addElement_button (
+	static _addElement_button(
 		{
 			keyPath = null,
 			html,
@@ -625,7 +627,7 @@ class NavBar {
 			className,
 		},
 	) {
-		const parentNode = this._tree.getNode({keyPath});
+		const parentNode = this._tree.getNode({ keyPath });
 
 		const li = document.createElement("li");
 		li.setAttribute("role", "presentation");
@@ -648,20 +650,20 @@ class NavBar {
 	 * @param {?Array<string>} keyPath - Element path to append this link to.
 	 * @param metas
 	 */
-	static _addElement_buttonSplit (
+	static _addElement_buttonSplit(
 		{
 			keyPath = null,
 			metas,
 		},
 	) {
-		const parentNode = this._tree.getNode({keyPath});
+		const parentNode = this._tree.getNode({ keyPath });
 
 		const li = document.createElement("li");
 		li.setAttribute("role", "presentation");
 		li.className = "ve-flex-v-center";
 
 		metas
-			.forEach(({className, click, html, title}, i) => {
+			.forEach(({ className, click, html, title }, i) => {
 				const eleSpan = document.createElement("span");
 
 				eleSpan.className = [
@@ -683,7 +685,7 @@ class NavBar {
 		parentNode.getBodyElement().appendChild(li);
 	}
 
-	static _getCurrentPage () {
+	static _getCurrentPage() {
 		let currentPage = window.location.pathname;
 		currentPage = currentPage.substr(currentPage.lastIndexOf("/") + 1);
 
@@ -691,12 +693,12 @@ class NavBar {
 		return currentPage.trim();
 	}
 
-	static _getCurrentWikiHelpPage () {
+	static _getCurrentWikiHelpPage() {
 		const slug = NavBar._getCurrentPage().replace(/.html$/i, "");
 		return `https://wiki.tercept.net/en/5eTools/HelpPages/${slug === "index" ? "" : slug}`;
 	}
 
-	static highlightCurrentPage () {
+	static highlightCurrentPage() {
 		let currentPage = NavBar._getCurrentPage();
 		let hash = "";
 
@@ -708,13 +710,13 @@ class NavBar {
 		const href = `${currentPage}${hash}`;
 
 		NavBar._tree.doRemoveAllPageHighlights();
-		const node = this._tree.getLeafNode({key: href, isAllowNull: true});
+		const node = this._tree.getLeafNode({ key: href, isAllowNull: true });
 		if (!node) return;
 
 		node.isActive = true;
 	}
 
-	static _handleDropdownClick (ele, event, isSide) {
+	static _handleDropdownClick(ele, event, isSide) {
 		event.preventDefault();
 		event.stopPropagation();
 		if (isSide) return;
@@ -725,28 +727,28 @@ class NavBar {
 
 	/* -------------------------------------------- */
 
-	static _isDropdownOpen (ele) {
+	static _isDropdownOpen(ele) {
 		return ele.parentNode.classList.contains("open");
 	}
 
 	/* -------------------------------------------- */
 
-	static _closeDropdown (ele) {
+	static _closeDropdown(ele) {
 		this._closeDropdownElement(ele.parentNode);
 	}
 
-	static _closeDropdownElement (ele) {
+	static _closeDropdownElement(ele) {
 		ele.classList.remove("open");
 		ele.firstChild.setAttribute("aria-expanded", "false");
 	}
 
-	static _closeAllDropdowns () {
+	static _closeAllDropdowns() {
 		NavBar._dropdowns.forEach(ele => NavBar._closeDropdownElement(ele));
 	}
 
 	/* -------------------------------------------- */
 
-	static _openDropdown (ele) {
+	static _openDropdown(ele) {
 		const lisOpen = [];
 
 		let parent = ele.parentNode;
@@ -763,10 +765,10 @@ class NavBar {
 
 		NavBar._dropdowns.filter(ele => !lisOpen.includes(ele)).forEach(ele => NavBar._closeDropdownElement(ele));
 
-		this._openDropdown_mutAlignment({liNavbar: lisOpen.slice(-1)[0]});
+		this._openDropdown_mutAlignment({ liNavbar: lisOpen.slice(-1)[0] });
 	}
 
-	static _openDropdownElement (ele) {
+	static _openDropdownElement(ele) {
 		ele.classList.add("open");
 		ele.firstChild.setAttribute("aria-expanded", "true");
 	}
@@ -776,7 +778,7 @@ class NavBar {
 	 * @param liNavbar
 	 * @private
 	 */
-	static _openDropdown_mutAlignment ({liNavbar}) {
+	static _openDropdown_mutAlignment({ liNavbar }) {
 		const uls = [...liNavbar.querySelectorAll("ul.ve-dropdown-menu")];
 		const widthRequired = window.innerWidth < 1200
 			? Math.max(...uls.map(ul => ul.getBoundingClientRect().width))
@@ -791,10 +793,10 @@ class NavBar {
 
 	/* -------------------------------------------- */
 
-	static _handleItemMouseEnter (ele) {
+	static _handleItemMouseEnter(ele) {
 		ele = e_(ele);
-		const timerIds = ele.siblings("[data-timer-id]").map(eleSib => ({ele: e_(eleSib), timerId: e_(eleSib).attr("data-timer-id")}));
-		timerIds.forEach(({ele, timerId}) => {
+		const timerIds = ele.siblings("[data-timer-id]").map(eleSib => ({ ele: e_(eleSib), timerId: e_(eleSib).attr("data-timer-id") }));
+		timerIds.forEach(({ ele, timerId }) => {
 			if (NavBar._timersOpen[timerId]) {
 				clearTimeout(NavBar._timersOpen[timerId]);
 				delete NavBar._timersOpen[timerId];
@@ -825,7 +827,7 @@ class NavBar {
 		});
 	}
 
-	static _handleSideItemMouseEnter (ele) {
+	static _handleSideItemMouseEnter(ele) {
 		const timerId = e_(ele).closest(`li.dropdown`).attr("data-timer-id");
 		if (NavBar._timersClose[timerId]) {
 			clearTimeout(NavBar._timersClose[timerId]);
@@ -834,7 +836,7 @@ class NavBar {
 		}
 	}
 
-	static _handleSideDropdownMouseEnter (ele) {
+	static _handleSideDropdownMouseEnter(ele) {
 		ele = e_(ele);
 		const timerId = ele.parente().attr("data-timer-id") || NavBar._timerId++;
 		ele.parente().attr("data-timer-id", timerId);
@@ -853,7 +855,7 @@ class NavBar {
 		}
 	}
 
-	static _handleSideDropdownMouseLeave (ele) {
+	static _handleSideDropdownMouseLeave(ele) {
 		ele = e_(ele);
 		if (!ele.parente().attr("data-timer-id")) return;
 		const timerId = ele.parente().attr("data-timer-id");
@@ -861,7 +863,7 @@ class NavBar {
 		delete NavBar._timersOpen[timerId];
 	}
 
-	static _clearAllTimers () {
+	static _clearAllTimers() {
 		Object.entries(NavBar._timersOpen).forEach(([k, v]) => {
 			clearTimeout(v);
 			delete NavBar._timersOpen[k];
@@ -870,18 +872,18 @@ class NavBar {
 }
 
 NavBar.InteractionManager = class {
-	static async _pOnClick_button_saveStateFile (evt) {
+	static async _pOnClick_button_saveStateFile(evt) {
 		evt.preventDefault();
 		const sync = StorageUtil.syncGetDump();
 		const async = await StorageUtil.pGetDump();
 		const syncStyle = globalThis.styleSwitcher.constructor.syncGetStorageDump();
-		const dump = {sync, async, syncStyle};
-		DataUtil.userDownload("5etools", dump, {fileType: "5etools"});
+		const dump = { sync, async, syncStyle };
+		DataUtil.userDownload("5etools", dump, { fileType: "5etools" });
 	}
 
-	static async _pOnClick_button_loadStateFile (evt) {
+	static async _pOnClick_button_loadStateFile(evt) {
 		evt.preventDefault();
-		const {jsons, errors} = await InputUiUtil.pGetUserUploadJson({expectedFileTypes: ["5etools"]});
+		const { jsons, errors } = await InputUiUtil.pGetUserUploadJson({ expectedFileTypes: ["5etools"] });
 
 		DataUtil.doHandleFileLoadErrorsGeneric(errors);
 
@@ -894,12 +896,12 @@ NavBar.InteractionManager = class {
 			globalThis.styleSwitcher.constructor.syncSetFromStorageDump(dump.syncStyle);
 			location.reload();
 		} catch (e) {
-			JqueryUtil.doToast({type: "danger", content: `Failed to load state! ${VeCt.STR_SEE_CONSOLE}`});
+			JqueryUtil.doToast({ type: "danger", content: `Failed to load state! ${VeCt.STR_SEE_CONSOLE}` });
 			throw e;
 		}
 	}
 
-	static async _pOnClick_button_addApp (evt) {
+	static async _pOnClick_button_addApp(evt) {
 		evt.preventDefault();
 
 		// Unavailable on Firefox
@@ -907,7 +909,7 @@ NavBar.InteractionManager = class {
 		//  - https://developer.mozilla.org/en-US/docs/Web/API/BeforeInstallPromptEvent
 		//  - https://developer.mozilla.org/en-US/docs/Web/API/Window/beforeinstallprompt_event
 		if (!NavBar._cachedInstallEvent) {
-			JqueryUtil.doToast({type: "warning", content: `Could not install app! Your browser may not support this feature.`});
+			JqueryUtil.doToast({ type: "warning", content: `Could not install app! Your browser may not support this feature.` });
 			return;
 		}
 
@@ -918,7 +920,7 @@ NavBar.InteractionManager = class {
 		}
 	}
 
-	static async _pOnClick_button_preloadOffline (evt, {route, isRequireImages = false}) {
+	static async _pOnClick_button_preloadOffline(evt, { route, isRequireImages = false }) {
 		evt.preventDefault();
 
 		if (globalThis.swCacheRoutes === undefined) {
@@ -937,7 +939,7 @@ NavBar.InteractionManager = class {
 		globalThis.swCacheRoutes(route);
 	}
 
-	static async _pOnClick_button_clearOffline (evt) {
+	static async _pOnClick_button_clearOffline(evt) {
 		evt.preventDefault();
 
 		if (globalThis.swResetAll === undefined) {
@@ -950,7 +952,7 @@ NavBar.InteractionManager = class {
 };
 
 NavBar.Node = class {
-	constructor ({parent, head, body}) {
+	constructor({ parent, head, body }) {
 		this._root = parent?._root || this;
 		this._parent = parent;
 		this._head = head;
@@ -962,11 +964,11 @@ NavBar.Node = class {
 		this._isActive = false;
 	}
 
-	getBodyElement () {
+	getBodyElement() {
 		return this._body;
 	}
 
-	addNode (
+	addNode(
 		{
 			key,
 			isLeaf = false,
@@ -978,7 +980,7 @@ NavBar.Node = class {
 		this._root._leafLookup[key] = node;
 	}
 
-	getNode ({keyPath, isAllowNull = false}) {
+	getNode({ keyPath, isAllowNull = false }) {
 		if (!keyPath?.length) return this;
 		const [key, ...nextKeys] = keyPath;
 		const node = this._children[key];
@@ -986,10 +988,10 @@ NavBar.Node = class {
 			if (isAllowNull) return null;
 			throw new Error(`Node for key path "${keyPath.join(".")}" did not exist!`);
 		}
-		return node.getNode({keyPath: [...nextKeys], isAllowNull});
+		return node.getNode({ keyPath: [...nextKeys], isAllowNull });
 	}
 
-	getLeafNode ({key, isAllowNull}) {
+	getLeafNode({ key, isAllowNull }) {
 		if (!key) throw new Error(`A "key" argument must be provided!`);
 		const node = this._root._leafLookup[key];
 		if (!node) {
@@ -999,31 +1001,31 @@ NavBar.Node = class {
 		return node;
 	}
 
-	doRemoveAllPageHighlights () {
+	doRemoveAllPageHighlights() {
 		this.isActive = false;
 		Object.values(this._children)
 			.forEach(node => node.doRemoveAllPageHighlights());
 	}
 
-	set isActive (val) {
+	set isActive(val) {
 		this._isActive = !!val;
 		this?._head?.classList?.toggle("ve-active", this._isActive);
 		if (this._parent) this._parent.isActive = this._isActive;
 	}
 
-	get isActive () {
+	get isActive() {
 		return this._isActive;
 	}
 };
 
 NavBar.NodeLink = class extends NavBar.Node {
-	constructor ({isInAccordion, lnk, ...rest}) {
+	constructor({ isInAccordion, lnk, ...rest }) {
 		super(rest);
 		this._isInAccordion = !!isInAccordion;
 		this._lnk = lnk;
 	}
 
-	set isActive (val) {
+	set isActive(val) {
 		if (!this._isInAccordion) {
 			super.isActive = val;
 			return;
@@ -1034,38 +1036,38 @@ NavBar.NodeLink = class extends NavBar.Node {
 		if (this._parent) this._parent.isActive = this._isActive;
 	}
 
-	get isActive () { // Overriding the setter clobbers the getter, so, re-make it
+	get isActive() { // Overriding the setter clobbers the getter, so, re-make it
 		return super.isActive;
 	}
 };
 
 NavBar.NodeAccordion = class extends NavBar.Node {
-	static getDispToggleDisplayHtml (val) { return val ? `[\u2212]` : `[+]`; }
+	static getDispToggleDisplayHtml(val) { return val ? `[\u2212]` : `[+]`; }
 
-	constructor ({dispToggle, ...rest}) {
+	constructor({ dispToggle, ...rest }) {
 		super(rest);
 		this._dispToggle = dispToggle;
 		this._isExpanded = false;
 	}
 
-	set isActive (val) {
+	set isActive(val) {
 		this._isActive = !!val;
 		this?._head?.classList?.toggle("nav2-accord__head--active", this._isActive);
 		if (val && !this._isExpanded) this.isExpanded = true;
 		if (this._parent) this._parent.isActive = this._isActive;
 	}
 
-	get isActive () { // Overriding the setter clobbers the getter, so, re-make it
+	get isActive() { // Overriding the setter clobbers the getter, so, re-make it
 		return super.isActive;
 	}
 
-	set isExpanded (val) {
+	set isExpanded(val) {
 		this._isExpanded = val;
 		this?._body?.classList?.toggle("ve-hidden", !val);
 		this._dispToggle.textContent = NavBar.NodeAccordion.getDispToggleDisplayHtml(val);
 	}
 
-	get isExpanded () {
+	get isExpanded() {
 		return this._isExpanded;
 	}
 };

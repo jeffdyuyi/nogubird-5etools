@@ -1,0 +1,5 @@
+/* Player Screen specific styles */
+.ve-page-dmscreen .dms__container {
+    padding-left: 0;
+    padding-right: 0;
+}
