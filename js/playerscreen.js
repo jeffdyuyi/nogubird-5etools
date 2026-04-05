@@ -33,15 +33,30 @@ const TITLE_LOADING = "Loading...";
 const ee = globalThis.ee;
 const es = globalThis.es;
 const e_ = globalThis.e_;
-const ElementUtil = /** @type {any} */ (globalThis).ElementUtil;
+const ElementUtil = (globalThis).ElementUtil;
 const Renderer = globalThis.Renderer;
 const Parser = globalThis.Parser;
 const elasticlunr = globalThis.elasticlunr;
 const lunr = globalThis.lunr;
-const StorageUtil = /** @type {any} */ (globalThis)["StorageUtil"];
-const InputUiUtil = /** @type {any} */ (globalThis)["InputUiUtil"];
-const DataUtil = /** @type {any} */ (globalThis)["DataUtil"];
-const ListUtilEntity = /** @type {any} */ (globalThis)["ListUtilEntity"];
+const StorageUtil = (globalThis)["StorageUtil"];
+const InputUiUtil = (globalThis)["InputUiUtil"];
+const DataUtil = (globalThis)["DataUtil"];
+const ListUtilEntity = (globalThis)["ListUtilEntity"];
+const ExcludeUtil = (globalThis).ExcludeUtil;
+const SearchUiUtil = (globalThis).SearchUiUtil;
+const UrlUtil = (globalThis).UrlUtil;
+const SortUtil = (globalThis).SortUtil;
+const SearchWidget = (globalThis).SearchWidget;
+const ListUtil = (globalThis).ListUtil;
+const MiscUtil = (globalThis).MiscUtil;
+const BaseComponent = (globalThis).BaseComponent;
+const ComponentUiUtil = (globalThis).ComponentUiUtil;
+const I18nUtil = (globalThis).I18nUtil;
+const BrewUtil2 = (globalThis).BrewUtil2;
+const PrereleaseUtil = (globalThis).PrereleaseUtil;
+const JqueryUtil = (globalThis).JqueryUtil;
+const EventUtil = (globalThis).EventUtil;
+const UiUtil = (globalThis).UiUtil;
 
 class Board {
     constructor() {
@@ -314,9 +329,6 @@ class Board {
 
         // search (filtered for players)
         this.availContent = await SearchUiUtil.pGetContentIndices();
-        Object.keys(this.availContent).forEach(k => {
-            this.availContent[k].x = this.availContent[k].x.filter(it => it.c !== 1 && it.c !== 46); // Exclude creatures/legendary groups
-        });
 
         // add tabs
         const omniTab = new AddMenuSearchTab({ board: this, indexes: this.availContent });
